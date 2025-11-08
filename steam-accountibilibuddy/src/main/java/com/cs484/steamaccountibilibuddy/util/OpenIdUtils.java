@@ -4,8 +4,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.Map;
-import java.util.Objects;
-
 public class OpenIdUtils {
 
     /**
@@ -23,7 +21,6 @@ public class OpenIdUtils {
      * Build a MultiValueMap form containing all received request params
      * (so every openid.* param Steam sent is forwarded), then set
      * openid.mode to check_authentication per the OpenID 2.0 spec.
-     *
      * Use this MultiValueMap as the body for a POST with content-type application/x-www-form-urlencoded.
      */
     public static MultiValueMap<String, String> buildVerificationForm(Map<String, String> params) {
