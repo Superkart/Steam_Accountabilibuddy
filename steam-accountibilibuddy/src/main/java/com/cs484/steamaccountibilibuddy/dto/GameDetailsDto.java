@@ -1,5 +1,6 @@
 package com.cs484.steamaccountibilibuddy.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -7,10 +8,8 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
-public class OwnedGameDto {
-    private Integer appId;
+@AllArgsConstructor
+public class GameDetailsDto {
     private String name;
-    private Double playtimeHours;
-    private String imgSmallUrl;
     private List<String> tags;
 }
