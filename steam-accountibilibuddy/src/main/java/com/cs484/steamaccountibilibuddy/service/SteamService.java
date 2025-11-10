@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ import com.cs484.steamaccountibilibuddy.exception.PrivateProfileException;
 @Service
 public class SteamService {
     private final WebClient webClient;
+    private final GameService gameService;
 
     @Value("${steam.api.key}")
     private String apiKey;
@@ -29,8 +31,9 @@ public class SteamService {
     private String apiBase;
 
 
-    public SteamService(WebClient webClient) {
+    public SteamService(WebClient webClient, GameService gameService) {
         this.webClient = webClient;
+        this.gameService = gameService;
     }
 
     @SuppressWarnings("unchecked")
@@ -84,20 +87,14 @@ public class SteamService {
                 String imgIcon = (String) g.getOrDefault("img_icon_url", "");
                 String imgSmall = appid != null ? "https://media.steampowered.com/steamcommunity/public/images/apps/" + appid + "/" + imgIcon + ".jpg" : null;
 
-                // Fetch additional details (tags) from Steam Store API
+                // Fetch additional details (tags) from Steam Store API or cache
                 List<String> tags = Collections.emptyList();
                 if (appid != null) {
                     GameDetailsDto details = fetchGameDetails(appid);
                     if (details != null && details.getTags() != null) {
                         tags = details.getTags();
                     }
-
-                    // Add delay to prevent Steam API rate limiting
-                    try {
-                        Thread.sleep(300); // 300ms delay between requests
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+                    // Note: Delay is handled inside fetchGameDetails() only on cache misses
                 }
 
                 OwnedGameDto dto = new OwnedGameDto();
@@ -155,7 +152,7 @@ public class SteamService {
                 Number dateAddedNum = (Number) item.getOrDefault("date_added", 0);
                 long dateAdded = dateAddedNum != null ? dateAddedNum.longValue() : 0L;
 
-                // Fetch game details (name and tags) from Steam Store API
+                // Fetch game details (name and tags) from Steam Store API or cache
                 String name = null;
                 List<String> tags = Collections.emptyList();
                 if (appId != null) {
@@ -164,13 +161,7 @@ public class SteamService {
                         name = details.getName();
                         tags = details.getTags() != null ? details.getTags() : Collections.emptyList();
                     }
-
-                    // Add delay to prevent Steam API rate limiting
-                    try {
-                        Thread.sleep(300); // 300ms delay between requests
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+                    // Note: Delay is handled inside fetchGameDetails() only on cache misses
                 }
 
                 WishlistEntryDto dto = new WishlistEntryDto();
@@ -191,8 +182,8 @@ public class SteamService {
     }
 
     /**
-     * Fetches game details (name and tags) from the Steam Store API.
-     * Note: This endpoint does not require an API key and returns detailed game information.
+     * Fetches game details (name and tags) from the database cache or Steam Store API.
+     * Checks cache first, then fetches from Steam API if not cached, and saves to cache.
      *
      * @param appId The Steam app ID
      * @return GameDetailsDto containing name and tags, or null if the request fails
@@ -201,6 +192,16 @@ public class SteamService {
     public GameDetailsDto fetchGameDetails(Integer appId) {
         if (appId == null) return null;
 
+        // Check cache first
+        Optional<GameDetailsDto> cachedGame = gameService.getGameFromCache(appId);
+        if (cachedGame.isPresent()) {
+            System.out.println("Cache HIT for appId " + appId);
+            return cachedGame.get();
+        }
+
+        System.out.println("Cache MISS for appId " + appId + " - fetching from Steam API");
+
+        // Not in cache, fetch from Steam API
         try {
             String uri = "https://store.steampowered.com/api/appdetails?appids={appId}";
 
@@ -245,7 +246,19 @@ public class SteamService {
                 });
             }
 
-            return new GameDetailsDto(name, tags);
+            GameDetailsDto gameDetails = new GameDetailsDto(name, tags);
+
+            // Save to cache for future requests
+            gameService.cacheGameDetails(appId, gameDetails);
+
+            // Add delay ONLY when fetching from Steam API to prevent rate limiting
+            try {
+                Thread.sleep(300); // 300ms delay between Steam API requests
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            return gameDetails;
         } catch (Exception e) {
             // Log error and return null if fetching fails
             System.err.println("Error fetching game details for appId " + appId + ": " + e.getMessage());
