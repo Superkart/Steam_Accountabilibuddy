@@ -238,8 +238,11 @@ public class SteamAuthController {
                     "pricesFetched", prices.size(),
                     "prices", prices
             ));
+        } catch (com.cs484.steamaccountibilibuddy.exception.PrivateProfileException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Wishlist is private: " + e.getMessage()));
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error testing batch API: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }

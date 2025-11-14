@@ -36,6 +36,7 @@ public class PriceCheckScheduler {
      * Cron expression: "0 0 9 * * ?" means: second=0, minute=0, hour=9, every day
      */
     @Scheduled(cron = "0 0 9 * * ?")
+    @SuppressWarnings("BusyWait") // Thread.sleep is intentional for API rate limiting
     public void checkPriceAlerts() {
         System.out.println("Starting daily price check job...");
 
@@ -73,7 +74,13 @@ public class PriceCheckScheduler {
 
                 // Small delay between batches to be respectful to Steam's API
                 if (end < appIds.size()) {
-                    Thread.sleep(1000);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        System.err.println("Price check interrupted during batch delay: " + e.getMessage());
+                        break;
+                    }
                 }
             }
 
@@ -137,7 +144,6 @@ public class PriceCheckScheduler {
 
         } catch (Exception e) {
             System.err.println("Error during batch price check: " + e.getMessage());
-            e.printStackTrace();
         }
 
         System.out.println("Price check job completed. Checked " + pricesChecked + " prices, sent " + emailsSent + " batched notifications to users.");
