@@ -7,7 +7,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -63,9 +62,8 @@ public class EmailService {
             mailSender.send(message);
             System.out.println("Price drop email sent to " + toEmail + " for game " + alert.getGameName());
 
-        } catch (Exception e) {
+        } catch (org.springframework.mail.MailException e) {
             System.err.println("Failed to send email to " + toEmail + ": " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -127,10 +125,12 @@ public class EmailService {
                 PriceAlert alert = entry.getKey();
                 BigDecimal currentPrice = entry.getValue();
 
-                body.append(String.format(
-                        "• %s\n" +
-                        "  Now: $%s (Target: $%s)\n" +
-                        "  Steam: https://store.steampowered.com/app/%d\n\n",
+                body.append("""
+                        • %s
+                          Now: $%s (Target: $%s)
+                          Steam: https://store.steampowered.com/app/%d
+
+                        """.formatted(
                         alert.getGameName(),
                         currentPrice.toString(),
                         alert.getTargetPrice().toString(),
@@ -147,9 +147,8 @@ public class EmailService {
             mailSender.send(message);
             System.out.println("Batched price drop email sent to " + toEmail + " for " + gameCount + " games");
 
-        } catch (Exception e) {
+        } catch (org.springframework.mail.MailException e) {
             System.err.println("Failed to send batched email to " + toEmail + ": " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -169,7 +168,7 @@ public class EmailService {
             mailSender.send(message);
             System.out.println("Test email sent to " + toEmail);
 
-        } catch (Exception e) {
+        } catch (org.springframework.mail.MailException e) {
             System.err.println("Failed to send test email to " + toEmail + ": " + e.getMessage());
             throw new RuntimeException("Email sending failed", e);
         }

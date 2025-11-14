@@ -92,7 +92,7 @@ public class SteamBatchService {
 
             return priceMap;
 
-        } catch (Exception e) {
+        } catch (org.springframework.web.reactive.function.client.WebClientException | java.io.IOException e) {
             System.err.println("Batch price fetch failed: " + e.getMessage());
             return Collections.emptyMap();
         }
@@ -132,7 +132,7 @@ public class SteamBatchService {
             request.put("data_request", dataRequest);
 
             return objectMapper.writeValueAsString(request);
-        } catch (Exception e) {
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             System.err.println("Failed to build JSON request: " + e.getMessage());
             return "{}";
         }
