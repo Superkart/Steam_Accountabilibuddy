@@ -217,8 +217,15 @@ public class SteamAuthController {
      * Logout endpoint - clears the session and security context
      */
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        // Clear the security context
         SecurityContextHolder.clearContext();
+
+        // Invalidate the HTTP session
+        if (request.getSession(false) != null) {
+            request.getSession().invalidate();
+        }
+
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Logged out successfully"

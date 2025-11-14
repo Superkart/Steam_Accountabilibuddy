@@ -37,6 +37,11 @@ export const authApi = {
     const response = await api.get<WishlistEntry[]>('/auth/steam/wishlist');
     return response.data;
   },
+
+  // Logout user
+  logout: async (): Promise<void> => {
+    await api.post('/auth/steam/logout');
+  },
 };
 
 export default api;

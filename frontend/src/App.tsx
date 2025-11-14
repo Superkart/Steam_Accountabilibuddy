@@ -4,7 +4,7 @@ import { useAuth } from './context/AuthContext';
 import './App.css';
 
 function App() {
-  const { user, loading, checkAuth } = useAuth();
+  const { user, loading, checkAuth, logout } = useAuth();
 
   // Check for authentication after Steam redirect
   useEffect(() => {
@@ -48,6 +48,21 @@ function App() {
           />
         )}
         <p>Steam ID: {user.steamId}</p>
+        <button
+          onClick={logout}
+          style={{
+            marginTop: '20px',
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#dc3545',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          Logout
+        </button>
       </header>
       <main>
         <p>Successfully logged in! More features coming soon...</p>
