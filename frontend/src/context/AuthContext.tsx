@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: () => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
 
@@ -45,9 +45,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     authApi.login();
   };
 
-  const logout = () => {
-    setUser(null);
-    // TODO: Implement backend logout endpoint
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
