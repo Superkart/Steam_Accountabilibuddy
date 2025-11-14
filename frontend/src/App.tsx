@@ -10,11 +10,11 @@ function App() {
   useEffect(() => {
     // If we're coming back from Steam, check auth status
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('openid.mode')) {
-      // We're returning from Steam login, wait a moment then check auth
-      setTimeout(() => {
-        checkAuth();
-      }, 1000);
+    if (urlParams.get('auth') === 'success') {
+      // We're returning from Steam login, check auth immediately
+      checkAuth();
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [checkAuth]);
 
