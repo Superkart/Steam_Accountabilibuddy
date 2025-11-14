@@ -43,6 +43,9 @@ public class SteamAuthController {
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
 
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
+
     private final WebClient webClient;
     private final SteamService steamService;
     private final UserService userService;
@@ -131,14 +134,10 @@ public class SteamAuthController {
         // Explicitly save the security context to the session
         securityContextRepository.saveContext(securityContext, request, response);
 
-        // Return profile info - client should call /library and /wishlist separately to avoid rate limiting
-        return ResponseEntity.ok(Map.of(
-                "steamId", steamId,
-                "username", username != null ? username : "",
-                "profilePictureUrl", profilePictureUrl != null ? profilePictureUrl : "",
-                "authenticated", true,
-                "message", "Authentication successful. Call /auth/steam/library and /auth/steam/wishlist separately."
-        ));
+        // Redirect back to frontend after successful authentication
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create(frontendUrl + "/?auth=success"));
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
     /**
@@ -178,6 +177,39 @@ public class SteamAuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Get current authenticated user's information.
+     * This endpoint returns the user's profile data including Steam username and profile picture.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        String steamId = com.cs484.steamaccountibilibuddy.security.SecurityUtils.getCurrentSteamId();
+        if (steamId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Not authenticated"));
+        }
+
+        try {
+            // Fetch user profile from Steam API
+            SteamProfileDto profile = steamService.getPlayerProfile(steamId);
+
+            // Get username from database (fallback to Steam if not stored)
+            String username = userService.getUserBySteamId(steamId)
+                    .map(com.cs484.steamaccountibilibuddy.entity.User::getUsername)
+                    .orElse(profile != null ? profile.getUsername() : null);
+
+            return ResponseEntity.ok(Map.of(
+                    "steamId", steamId,
+                    "username", username != null ? username : "",
+                    "profilePictureUrl", profile != null && profile.getProfilePictureUrl() != null ? profile.getProfilePictureUrl() : "",
+                    "authenticated", true
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch user profile: " + e.getMessage()));
         }
     }
 

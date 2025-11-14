@@ -18,8 +18,8 @@ export const authApi = {
   // Check if user is authenticated (can be called after Steam redirect)
   checkAuth: async (): Promise<AuthResponse | null> => {
     try {
-      // Try to get library to verify session
-      const response = await api.get<AuthResponse>('/auth/steam/library');
+      // Get current user info to verify session
+      const response = await api.get<AuthResponse>('/auth/steam/me');
       return response.data;
     } catch {
       return null; // Not authenticated
