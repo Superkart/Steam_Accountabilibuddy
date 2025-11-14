@@ -46,12 +46,15 @@ public class SteamAuthController {
     private final WebClient webClient;
     private final SteamService steamService;
     private final UserService userService;
+    private final com.cs484.steamaccountibilibuddy.service.SteamBatchService steamBatchService;
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
-    public SteamAuthController(WebClient webClient, SteamService steamService, UserService userService) {
+    public SteamAuthController(WebClient webClient, SteamService steamService, UserService userService,
+                               com.cs484.steamaccountibilibuddy.service.SteamBatchService steamBatchService) {
         this.webClient = webClient;
         this.steamService = steamService;
         this.userService = userService;
+        this.steamBatchService = steamBatchService;
     }
 
     @GetMapping("/login")
@@ -188,5 +191,57 @@ public class SteamAuthController {
                 "success", true,
                 "message", "Logged out successfully"
         ));
+    }
+
+    /**
+     * EXPERIMENTAL: Test endpoint for batch price fetching using real wishlist data.
+     * Fetches your wishlist and tests the batch API with those app IDs.
+     * Test with: GET /auth/steam/test-batch (requires authentication)
+     */
+    @GetMapping("/test-batch")
+    public ResponseEntity<?> testBatchApi() {
+        String steamId = com.cs484.steamaccountibilibuddy.security.SecurityUtils.getCurrentSteamId();
+        if (steamId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Not authenticated. Please login via /auth/steam/login first."));
+        }
+
+        try {
+            // Fetch wishlist to get real app IDs
+            System.out.println("Fetching wishlist for steamId: " + steamId);
+            List<com.cs484.steamaccountibilibuddy.dto.WishlistEntryDto> wishlist =
+                    steamService.getWishlist(steamId);
+
+            if (wishlist.isEmpty()) {
+                return ResponseEntity.ok(Map.of(
+                    "message", "Your wishlist is empty. Add some games to test the batch API.",
+                    "wishlistSize", 0
+                ));
+            }
+
+            // Extract app IDs (limit to first 10 for testing)
+            List<Integer> appIdList = wishlist.stream()
+                    .limit(10)
+                    .map(com.cs484.steamaccountibilibuddy.dto.WishlistEntryDto::getAppId)
+                    .filter(id -> id != null)
+                    .toList();
+
+            System.out.println("Testing batch API with " + appIdList.size() + " games from your wishlist");
+
+            // Use the batch API to fetch prices
+            java.util.Map<Integer, java.math.BigDecimal> prices = steamBatchService.batchGetPrices(appIdList, "US");
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Batch API test complete! Check console for details.",
+                    "wishlistSize", wishlist.size(),
+                    "testedAppIds", appIdList,
+                    "pricesFetched", prices.size(),
+                    "prices", prices
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 }
