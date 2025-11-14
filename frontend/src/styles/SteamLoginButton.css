@@ -1,0 +1,33 @@
+.steam-login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 32px;
+  background: linear-gradient(90deg, #171a21 0%, #2a475e 100%);
+  border: none;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.steam-login-button:hover {
+  background: linear-gradient(90deg, #2a475e 0%, #171a21 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.steam-login-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.steam-icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
