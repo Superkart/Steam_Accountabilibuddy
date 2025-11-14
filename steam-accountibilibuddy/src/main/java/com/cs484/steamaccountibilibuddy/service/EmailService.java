@@ -7,6 +7,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class EmailService {
@@ -76,6 +78,79 @@ public class EmailService {
      */
     public void sendPriceDropNotification(String toEmail, PriceAlert alert, BigDecimal currentPrice) {
         sendPriceDropNotification(toEmail, alert, currentPrice, null);
+    }
+
+    /**
+     * Send a batched price drop notification email with multiple games on sale.
+     * This prevents users from receiving multiple emails when several games drop in price.
+     *
+     * @param toEmail The recipient's email address
+     * @param alertsWithPrices Map of PriceAlert to current price for all games on sale
+     * @param username The user's Steam username (optional)
+     */
+    public void sendBatchedPriceDropNotification(String toEmail, Map<PriceAlert, BigDecimal> alertsWithPrices, String username) {
+        if (toEmail == null || toEmail.isBlank()) {
+            System.err.println("Cannot send email: recipient email is blank");
+            return;
+        }
+
+        if (alertsWithPrices == null || alertsWithPrices.isEmpty()) {
+            System.err.println("Cannot send email: no alerts provided");
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+
+            int gameCount = alertsWithPrices.size();
+            String subject = gameCount == 1
+                    ? "Price Alert: 1 game on sale!"
+                    : String.format("Price Alert: %d games on sale!", gameCount);
+            message.setSubject(subject);
+
+            String greeting = (username != null && !username.isBlank())
+                    ? "Hi " + username + "!\n\n"
+                    : "Good news!\n\n";
+
+            StringBuilder body = new StringBuilder(greeting);
+
+            if (gameCount == 1) {
+                body.append("A game on your wishlist has dropped below your target price:\n\n");
+            } else {
+                body.append(String.format("%d games on your wishlist have dropped below your target prices:\n\n", gameCount));
+            }
+
+            // List each game with its price details
+            for (Map.Entry<PriceAlert, BigDecimal> entry : alertsWithPrices.entrySet()) {
+                PriceAlert alert = entry.getKey();
+                BigDecimal currentPrice = entry.getValue();
+
+                body.append(String.format(
+                        "• %s\n" +
+                        "  Now: $%s (Target: $%s)\n" +
+                        "  Steam: https://store.steampowered.com/app/%d\n\n",
+                        alert.getGameName(),
+                        currentPrice.toString(),
+                        alert.getTargetPrice().toString(),
+                        alert.getAppId()
+                ));
+            }
+
+            body.append("---\n");
+            body.append("Steam Accountabilibuddy Price Alert Service\n");
+            body.append("To manage your price alerts, log in to your account.");
+
+            message.setText(body.toString());
+
+            mailSender.send(message);
+            System.out.println("Batched price drop email sent to " + toEmail + " for " + gameCount + " games");
+
+        } catch (Exception e) {
+            System.err.println("Failed to send batched email to " + toEmail + ": " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**

@@ -101,6 +101,7 @@ public class PriceAlertService {
 
     /**
      * Update the current price and last checked timestamp for an alert.
+     * Also resets notification flag if price goes above target (so user can be notified on next drop).
      *
      * @param alert The PriceAlert to update
      * @param currentPrice The current price from Steam
@@ -110,6 +111,26 @@ public class PriceAlertService {
     public PriceAlert updateAlertPrice(PriceAlert alert, BigDecimal currentPrice) {
         alert.setCurrentPrice(currentPrice);
         alert.setLastChecked(java.time.LocalDateTime.now());
+
+        // Reset notification flag if price goes above target
+        // This allows user to be notified again when price drops below target in the future
+        if (currentPrice != null && currentPrice.compareTo(alert.getTargetPrice()) >= 0) {
+            alert.setLastNotificationSent(null);
+        }
+
+        return priceAlertRepository.save(alert);
+    }
+
+    /**
+     * Mark that a notification email was sent for this alert.
+     * This prevents duplicate emails during multi-day sales.
+     *
+     * @param alert The PriceAlert to mark
+     * @return The updated PriceAlert
+     */
+    @Transactional
+    public PriceAlert markNotificationSent(PriceAlert alert) {
+        alert.setLastNotificationSent(java.time.LocalDateTime.now());
         return priceAlertRepository.save(alert);
     }
 }

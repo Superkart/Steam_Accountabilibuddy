@@ -40,6 +40,9 @@ public class PriceAlert {
     @Column(name = "last_checked")
     private LocalDateTime lastChecked;
 
+    @Column(name = "last_notification_sent")
+    private LocalDateTime lastNotificationSent;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
