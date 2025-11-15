@@ -322,8 +322,8 @@
 }
 
 .similar-game-img {
-  width: 92px;
-  height: 43px;
+  width: 231px;
+  height: 87px;
   object-fit: cover;
   border-radius: 2px;
   flex-shrink: 0;
@@ -342,9 +342,28 @@
   font-weight: 400;
 }
 
+.similarity-score {
+  color: #beee11;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
 .similar-game-playtime {
   color: #8f98a0;
   font-size: 11px;
+}
+
+.similar-game-common-tags {
+  color: #8f98a0;
+  font-size: 11px;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.similar-game-common-tags strong {
+  color: #67c1f5;
+  font-weight: 500;
 }
 
 .similar-game-tags {
