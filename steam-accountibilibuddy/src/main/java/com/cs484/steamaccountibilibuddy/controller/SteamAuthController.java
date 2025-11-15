@@ -50,14 +50,17 @@ public class SteamAuthController {
     private final SteamService steamService;
     private final UserService userService;
     private final com.cs484.steamaccountibilibuddy.service.SteamBatchService steamBatchService;
+    private final com.cs484.steamaccountibilibuddy.service.GameService gameService;
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     public SteamAuthController(WebClient webClient, SteamService steamService, UserService userService,
-                               com.cs484.steamaccountibilibuddy.service.SteamBatchService steamBatchService) {
+                               com.cs484.steamaccountibilibuddy.service.SteamBatchService steamBatchService,
+                               com.cs484.steamaccountibilibuddy.service.GameService gameService) {
         this.webClient = webClient;
         this.steamService = steamService;
         this.userService = userService;
         this.steamBatchService = steamBatchService;
+        this.gameService = gameService;
     }
 
     @GetMapping("/login")
@@ -230,6 +233,31 @@ public class SteamAuthController {
                 "success", true,
                 "message", "Logged out successfully"
         ));
+    }
+
+    /**
+     * Clear the game details cache.
+     * This will force all games to be re-fetched with updated information (e.g., community tags).
+     * Use this when you want to refresh cached game data.
+     */
+    @PostMapping("/clear-cache")
+    public ResponseEntity<?> clearCache() {
+        String steamId = com.cs484.steamaccountibilibuddy.security.SecurityUtils.getCurrentSteamId();
+        if (steamId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Not authenticated"));
+        }
+
+        try {
+            gameService.clearCache();
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Game cache cleared successfully. Your library and wishlist will now fetch fresh data with community tags."
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to clear cache: " + e.getMessage()));
+        }
     }
 
     /**

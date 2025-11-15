@@ -1,31 +1,121 @@
 import { useEffect, useState } from 'react';
-import type { WishlistEntry } from '../types/auth';
+import type { WishlistEntry, Game } from '../types/auth';
 import { authApi } from '../services/api';
 import './WishlistDisplay.css';
 
+type SortOption = 'dateAdded' | 'priority' | 'priceAsc' | 'priceDesc';
+type SimilarGameWithScore = { game: Game; score: number; commonTags: string[] };
+
 export const WishlistDisplay = () => {
   const [wishlist, setWishlist] = useState<WishlistEntry[]>([]);
+  const [library, setLibrary] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedGameId, setExpandedGameId] = useState<number | null>(null);
+  const [similarGamesMap, setSimilarGamesMap] = useState<Map<number, SimilarGameWithScore[]>>(new Map());
+  const [sortBy, setSortBy] = useState<SortOption>('dateAdded');
 
   useEffect(() => {
-    loadWishlist();
+    loadData();
   }, []);
 
-  const loadWishlist = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await authApi.getWishlist();
-      setWishlist(data);
+      // Load both wishlist and library in parallel
+      const [wishlistData, libraryData] = await Promise.all([
+        authApi.getWishlist(),
+        authApi.getLibrary()
+      ]);
+      setWishlist(wishlistData);
+      setLibrary(libraryData);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Failed to load wishlist');
+        setError('Failed to load data');
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const findSimilarGames = (wishlistGame: WishlistEntry): Array<{ game: Game; score: number; commonTags: string[] }> => {
+    if (!wishlistGame.tags || wishlistGame.tags.length === 0) {
+      return [];
+    }
+
+    const wishlistTags = new Set(wishlistGame.tags.map(tag => tag.toLowerCase()));
+
+    // Find library games that share tags with the wishlist game
+    const gamesWithScores = library.map(game => {
+      const gameTags = new Set((game.tags || []).map(tag => tag.toLowerCase()));
+      const commonTags = [...wishlistTags].filter(tag => gameTags.has(tag));
+      return {
+        game,
+        score: commonTags.length,
+        commonTags
+      };
+    }).filter(item => item.score >= 4); // Require at least 4 common tags for meaningful similarity
+
+    // Sort by number of common tags (descending) and return top 5
+    return gamesWithScores
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+  };
+
+  const toggleSimilarGames = (appId: number) => {
+    if (expandedGameId === appId) {
+      // Collapse if already expanded
+      setExpandedGameId(null);
+    } else {
+      // Expand and compute similar games if not already computed
+      setExpandedGameId(appId);
+      if (!similarGamesMap.has(appId)) {
+        const wishlistGame = wishlist.find(g => g.appId === appId);
+        if (wishlistGame) {
+          const similar = findSimilarGames(wishlistGame);
+          setSimilarGamesMap(new Map(similarGamesMap.set(appId, similar)));
+        }
+      }
+    }
+  };
+
+  const getSortedWishlist = (): WishlistEntry[] => {
+    const sorted = [...wishlist];
+
+    switch (sortBy) {
+      case 'dateAdded':
+        // Sort by date added (newest first)
+        return sorted.sort((a, b) => b.addedAt - a.addedAt);
+
+      case 'priority':
+        // Sort by your rank (lower number = higher priority/rank)
+        return sorted.sort((a, b) => {
+          const aPriority = parseInt(a.priority) || Number.MAX_VALUE;
+          const bPriority = parseInt(b.priority) || Number.MAX_VALUE;
+          return aPriority - bPriority;
+        });
+
+      case 'priceAsc':
+        // Sort by price (low to high)
+        return sorted.sort((a, b) => {
+          const aPrice = a.currentPrice ?? Number.MAX_VALUE;
+          const bPrice = b.currentPrice ?? Number.MAX_VALUE;
+          return aPrice - bPrice;
+        });
+
+      case 'priceDesc':
+        // Sort by price (high to low)
+        return sorted.sort((a, b) => {
+          const aPrice = a.currentPrice ?? -1;
+          const bPrice = b.currentPrice ?? -1;
+          return bPrice - aPrice;
+        });
+
+      default:
+        return sorted;
     }
   };
 
@@ -55,7 +145,7 @@ export const WishlistDisplay = () => {
               <li>Refresh this page</li>
             </ol>
           </div>
-          <button onClick={loadWishlist} className="retry-button">
+          <button onClick={loadData} className="retry-button">
             Try Again
           </button>
         </div>
@@ -79,55 +169,130 @@ export const WishlistDisplay = () => {
     <div className="wishlist-container">
       <div className="wishlist-header">
         <h2>Your Wishlist</h2>
-        <span className="game-count">{wishlist.length} items</span>
+        <div className="header-controls">
+          <span className="game-count">{wishlist.length} items</span>
+          <div className="sort-controls">
+            <label htmlFor="sort-select" className="sort-label">Sort by:</label>
+            <select
+              id="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="sort-dropdown"
+            >
+              <option value="dateAdded">Date Added</option>
+              <option value="priority">Priority</option>
+              <option value="priceAsc">Price: Low to High</option>
+              <option value="priceDesc">Price: High to Low</option>
+            </select>
+          </div>
+        </div>
       </div>
       <div className="wishlist-list">
-        {wishlist.map((game) => (
-          <div key={game.appId} className="wishlist-item">
-            <div className="item-left">
-              <img
-                src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.appId}/header.jpg`}
-                alt={game.name}
-                className="game-capsule"
-                onError={(e) => {
-                  e.currentTarget.src = 'https://via.placeholder.com/292x136/1b2838/ffffff?text=No+Image';
-                }}
-              />
-            </div>
-            <div className="item-center">
-              <h3 className="game-title">{game.name}</h3>
-              {game.tags && game.tags.length > 0 && (
-                <div className="game-tags">
-                  {game.tags.slice(0, 5).map((tag, index) => (
-                    <span key={index} className="tag">
-                      {tag}
-                    </span>
-                  ))}
+        {getSortedWishlist().map((game) => (
+          <div key={game.appId}>
+            <div className="wishlist-item">
+              <div className="item-left">
+                <img
+                  src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.appId}/header.jpg`}
+                  alt={game.name}
+                  className="game-capsule"
+                  onError={(e) => {
+                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="292" height="136"%3E%3Crect fill="%231b2838" width="292" height="136"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+                  }}
+                />
+              </div>
+              <div className="item-center">
+                <h3 className="game-title">{game.name}</h3>
+                {game.tags && game.tags.length > 0 && (
+                  <div className="game-tags">
+                    {game.tags.slice(0, 7).map((tag, index) => (
+                      <span key={index} className="tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="game-meta">
+                  Added on {new Date((game.addedAt || 0) * 1000).toLocaleDateString()}
                 </div>
-              )}
-              <div className="game-meta">
-                Added on {new Date((game.addedAt || 0) * 1000).toLocaleDateString()}
+              </div>
+              <div className="item-right">
+                {game.currentPrice !== undefined && game.currentPrice !== null ? (
+                  <div className="price-container">
+                    {game.currentPrice > 0 ? (
+                      <div className="price-box">
+                        <span className="price">${Number(game.currentPrice).toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      <div className="free-box">
+                        <span className="free-text">Free To Play</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="price-container">
+                    <span className="price-unavailable">Price unavailable</span>
+                  </div>
+                )}
+                <button
+                  className="similar-games-button"
+                  onClick={() => toggleSimilarGames(game.appId)}
+                >
+                  {expandedGameId === game.appId ? 'Hide' : 'Show'} Similar Games
+                </button>
               </div>
             </div>
-            <div className="item-right">
-              {game.currentPrice !== undefined && game.currentPrice !== null ? (
-                <div className="price-container">
-                  {game.currentPrice > 0 ? (
-                    <div className="price-box">
-                      <span className="price">${Number(game.currentPrice).toFixed(2)}</span>
+
+            {expandedGameId === game.appId && (
+              <div className="similar-games-container">
+                {similarGamesMap.get(game.appId)?.length ? (
+                  <>
+                    <h4 className="similar-games-title">Similar Games in Your Library:</h4>
+                    <div className="similar-games-list">
+                      {similarGamesMap.get(game.appId)?.map((similarItem) => (
+                        <div key={similarItem.game.appId} className="similar-game-item">
+                          {similarItem.game.appId && (
+                            <img
+                              src={`https://cdn.akamai.steamstatic.com/steam/apps/${similarItem.game.appId}/capsule_231x87.jpg`}
+                              alt={similarItem.game.name}
+                              className="similar-game-img"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="231" height="87"%3E%3Crect fill="%231b2838" width="231" height="87"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="12" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+                              }}
+                            />
+                          )}
+                          <div className="similar-game-info">
+                            <div className="similar-game-name">
+                              {similarItem.game.name}
+                              <span className="similarity-score"> ({similarItem.score} tags in common)</span>
+                            </div>
+                            {similarItem.game.playtimeHours !== undefined && (
+                              <div className="similar-game-playtime">
+                                {similarItem.game.playtimeHours.toFixed(1)} hours played
+                              </div>
+                            )}
+                            <div className="similar-game-common-tags">
+                              <strong>Common tags:</strong> {similarItem.commonTags.join(', ')}
+                            </div>
+                            {similarItem.game.tags && similarItem.game.tags.length > 0 && (
+                              <div className="similar-game-tags">
+                                {similarItem.game.tags.slice(0, 7).map((tag, idx) => (
+                                  <span key={idx} className="similar-tag">{tag}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ) : (
-                    <div className="free-box">
-                      <span className="free-text">Free To Play</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="price-container">
-                  <span className="price-unavailable">Price unavailable</span>
-                </div>
-              )}
-            </div>
+                  </>
+                ) : (
+                  <div className="no-similar-games">
+                    No similar games found in your library (need at least 4 common tags).
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>

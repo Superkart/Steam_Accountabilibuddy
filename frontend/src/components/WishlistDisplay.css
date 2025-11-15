@@ -7,10 +7,12 @@
 .wishlist-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   margin-bottom: 20px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .wishlist-header h2 {
@@ -22,9 +24,56 @@
   letter-spacing: 2px;
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .game-count {
   color: #8f98a0;
   font-size: 14px;
+}
+
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sort-label {
+  color: #8f98a0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sort-dropdown {
+  background: rgba(0, 0, 0, 0.4);
+  color: #67c1f5;
+  border: 1px solid rgba(103, 193, 245, 0.3);
+  padding: 6px 12px;
+  border-radius: 2px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+  outline: none;
+}
+
+.sort-dropdown:hover {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: #67c1f5;
+}
+
+.sort-dropdown:focus {
+  border-color: #67c1f5;
+  box-shadow: 0 0 0 2px rgba(103, 193, 245, 0.2);
+}
+
+.sort-dropdown option {
+  background: #1b2838;
+  color: white;
 }
 
 .loading {
@@ -172,10 +221,11 @@
 .item-right {
   flex-shrink: 0;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   padding: 15px 20px;
   min-width: 140px;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .price-container {
@@ -215,6 +265,130 @@
   font-size: 12px;
 }
 
+/* Similar Games Button */
+.similar-games-button {
+  background: rgba(103, 193, 245, 0.2);
+  color: #67c1f5;
+  border: 1px solid #67c1f5;
+  padding: 8px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-top: 5px;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.similar-games-button:hover {
+  background: rgba(103, 193, 245, 0.3);
+  border-color: #8ed4ff;
+}
+
+/* Similar Games Container */
+.similar-games-container {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  margin-top: 12px;
+  border-left: 3px solid #67c1f5;
+}
+
+.similar-games-title {
+  color: #67c1f5;
+  font-size: 14px;
+  font-weight: 400;
+  margin: 0 0 15px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.similar-games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.similar-game-item {
+  display: flex;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+
+.similar-game-item:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.similar-game-img {
+  width: 231px;
+  height: 87px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.similar-game-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.similar-game-name {
+  color: white;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.similarity-score {
+  color: #beee11;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.similar-game-playtime {
+  color: #8f98a0;
+  font-size: 11px;
+}
+
+.similar-game-common-tags {
+  color: #8f98a0;
+  font-size: 11px;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.similar-game-common-tags strong {
+  color: #67c1f5;
+  font-weight: 500;
+}
+
+.similar-game-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.similar-tag {
+  background-color: rgba(103, 193, 245, 0.15);
+  color: #67c1f5;
+  padding: 2px 5px;
+  border-radius: 2px;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.no-similar-games {
+  color: #8f98a0;
+  font-size: 13px;
+  font-style: italic;
+  padding: 10px 0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .wishlist-item {
@@ -229,5 +403,14 @@
   .item-right {
     justify-content: flex-start;
     padding-top: 0;
+  }
+
+  .similar-game-item {
+    flex-direction: column;
+  }
+
+  .similar-game-img {
+    width: 100%;
+    height: auto;
   }
 }
