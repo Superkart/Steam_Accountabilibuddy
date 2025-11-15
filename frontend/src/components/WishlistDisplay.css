@@ -265,6 +265,13 @@
   font-size: 12px;
 }
 
+.item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
 /* Similar Games Button */
 .similar-games-button {
   background: rgba(103, 193, 245, 0.2);

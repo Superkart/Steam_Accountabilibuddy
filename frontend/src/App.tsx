@@ -1,11 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { LoginPage } from './pages/LoginPage';
 import { useAuth } from './context/AuthContext';
 import { WishlistDisplay } from './components/WishlistDisplay';
+import { EmailSettings } from './components/EmailSettings';
 import './App.css';
+
+type Tab = 'wishlist' | 'settings';
 
 function App() {
   const { user, loading, checkAuth, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState<Tab>('wishlist');
 
   // Check for authentication after Steam redirect
   useEffect(() => {
@@ -40,33 +44,40 @@ function App() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1>Welcome, {user.username}!</h1>
-        {user.profilePictureUrl && (
-          <img
-            src={user.profilePictureUrl}
-            alt="Profile"
-            style={{ width: 64, height: 64, borderRadius: '50%' }}
-          />
-        )}
-        <p>Steam ID: {user.steamId}</p>
-        <button
-          onClick={logout}
-          style={{
-            marginTop: '20px',
-            padding: '10px 20px',
-            fontSize: '16px',
-            backgroundColor: '#dc3545',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
+        <div className="header-info">
+          <h1>Welcome, {user.username}!</h1>
+          {user.profilePictureUrl && (
+            <img
+              src={user.profilePictureUrl}
+              alt="Profile"
+              className="profile-picture"
+            />
+          )}
+          <p>Steam ID: {user.steamId}</p>
+          {user.email && <p className="user-email">Email: {user.email}</p>}
+        </div>
+        <button onClick={logout} className="logout-button">
           Logout
         </button>
       </header>
+
+      <nav className="tab-navigation">
+        <button
+          className={`tab-button ${activeTab === 'wishlist' ? 'active' : ''}`}
+          onClick={() => setActiveTab('wishlist')}
+        >
+          Wishlist
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          Settings
+        </button>
+      </nav>
+
       <main>
-        <WishlistDisplay />
+        {activeTab === 'wishlist' ? <WishlistDisplay /> : <EmailSettings />}
       </main>
     </div>
   );

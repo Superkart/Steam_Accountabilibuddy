@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, Game, WishlistEntry } from '../types/auth';
+import type { AuthResponse, Game, WishlistEntry, PriceAlert } from '../types/auth';
 
 const api = axios.create({
   baseURL: '', // Use Vite proxy
@@ -55,6 +55,54 @@ export const authApi = {
   // Logout user
   logout: async (): Promise<void> => {
     await api.post('/auth/steam/logout');
+  },
+
+  // Get user profile (including email)
+  getUserProfile: async (): Promise<{ steamId: string; email: string }> => {
+    const response = await api.get('/user/profile');
+    return response.data;
+  },
+
+  // Save user email
+  saveEmail: async (email: string): Promise<void> => {
+    await api.post('/user/email', { email });
+  },
+
+  // Get all price alerts for the user
+  getPriceAlerts: async (): Promise<PriceAlert[]> => {
+    try {
+      const response = await api.get<{ alerts: PriceAlert[] }>('/price-alerts');
+      return response.data.alerts;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to load price alerts');
+    }
+  },
+
+  // Create or update a price alert
+  createPriceAlert: async (appId: number, gameName: string, targetPrice: number): Promise<void> => {
+    try {
+      await api.post('/price-alerts', { appId, gameName, targetPrice });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to create price alert');
+    }
+  },
+
+  // Delete a price alert
+  deletePriceAlert: async (appId: number): Promise<void> => {
+    try {
+      await api.delete(`/price-alerts/${appId}`);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to delete price alert');
+    }
   },
 };
 
