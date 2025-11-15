@@ -1,0 +1,233 @@
+.wishlist-container {
+  width: 100%;
+  padding: 20px;
+  background: linear-gradient(to bottom, rgba(27, 40, 56, 0.4) 0%, rgba(27, 40, 56, 0) 100%);
+}
+
+.wishlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.wishlist-header h2 {
+  color: white;
+  font-size: 26px;
+  font-weight: 300;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.game-count {
+  color: #8f98a0;
+  font-size: 14px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #8f98a0;
+  font-size: 18px;
+}
+
+.error-message {
+  background-color: rgba(255, 243, 205, 0.1);
+  border: 2px solid #ffc107;
+  border-radius: 4px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.error-message h3 {
+  color: #ffc107;
+  margin-top: 0;
+}
+
+.error-message p {
+  color: #c5c3c0;
+  margin: 10px 0;
+}
+
+.help-text {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.help-text strong {
+  color: white;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.help-text ol {
+  margin: 10px 0;
+  padding-left: 25px;
+  color: #8f98a0;
+}
+
+.help-text li {
+  margin: 5px 0;
+}
+
+.retry-button {
+  background: linear-gradient(to bottom, #75b022 5%, #588a1b 95%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.retry-button:hover {
+  background: linear-gradient(to bottom, #8ed629 5%, #6aa621 95%);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #8f98a0;
+}
+
+.empty-state p {
+  margin: 10px 0;
+}
+
+/* Wishlist Items */
+.wishlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wishlist-item {
+  display: flex;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%);
+  border-radius: 0;
+  overflow: hidden;
+  transition: background 0.3s;
+  min-height: 136px;
+}
+
+.wishlist-item:hover {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+.item-left {
+  flex-shrink: 0;
+}
+
+.game-capsule {
+  width: 292px;
+  height: 136px;
+  object-fit: cover;
+  display: block;
+}
+
+.item-center {
+  flex: 1;
+  padding: 15px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.game-title {
+  color: white;
+  font-size: 18px;
+  font-weight: 400;
+  margin: 0 0 10px 0;
+  line-height: 1.3;
+}
+
+.game-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.tag {
+  background-color: rgba(103, 193, 245, 0.2);
+  color: #67c1f5;
+  padding: 3px 6px;
+  border-radius: 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.game-meta {
+  color: #556772;
+  font-size: 11px;
+  margin-top: auto;
+}
+
+.item-right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  min-width: 140px;
+  justify-content: flex-end;
+}
+
+.price-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.price-box {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 8px 12px;
+  border-radius: 2px;
+}
+
+.price {
+  color: #beee11;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.free-box {
+  background: linear-gradient(to bottom, #75b022 5%, #588a1b 95%);
+  padding: 8px 12px;
+  border-radius: 2px;
+}
+
+.free-text {
+  color: white;
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.price-unavailable {
+  color: #8f98a0;
+  font-size: 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .wishlist-item {
+    flex-direction: column;
+  }
+
+  .game-capsule {
+    width: 100%;
+    height: auto;
+  }
+
+  .item-right {
+    justify-content: flex-start;
+    padding-top: 0;
+  }
+}
