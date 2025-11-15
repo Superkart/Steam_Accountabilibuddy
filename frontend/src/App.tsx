@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { LoginPage } from './pages/LoginPage';
 import { useAuth } from './context/AuthContext';
+import { WishlistDisplay } from './components/WishlistDisplay';
 import './App.css';
 
 function App() {
@@ -65,7 +66,7 @@ function App() {
         </button>
       </header>
       <main>
-        <p>Successfully logged in! More features coming soon...</p>
+        <WishlistDisplay />
       </main>
     </div>
   );
