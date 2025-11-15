@@ -197,7 +197,7 @@ export const WishlistDisplay = () => {
                   alt={game.name}
                   className="game-capsule"
                   onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/292x136/1b2838/ffffff?text=No+Image';
+                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="292" height="136"%3E%3Crect fill="%231b2838" width="292" height="136"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
                   }}
                 />
               </div>

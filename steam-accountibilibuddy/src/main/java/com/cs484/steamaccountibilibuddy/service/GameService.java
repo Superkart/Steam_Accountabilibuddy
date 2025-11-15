@@ -32,6 +32,22 @@ public class GameService {
     }
 
     /**
+     * Batch get games from cache by multiple appIds.
+     * Returns a Map of appId -> GameDetailsDto for all found games.
+     * This is much more efficient than calling getGameFromCache() multiple times.
+     */
+    public java.util.Map<Integer, GameDetailsDto> batchGetGamesFromCache(List<Integer> appIds) {
+        if (appIds == null || appIds.isEmpty()) return Collections.emptyMap();
+
+        List<Game> games = gameRepository.findByAppIdIn(appIds);
+        return games.stream()
+                .collect(Collectors.toMap(
+                        Game::getAppId,
+                        this::convertToDto
+                ));
+    }
+
+    /**
      * Save or update game details in the cache.
      * @param appId The Steam app ID
      * @param gameDetails The game details to cache
@@ -91,5 +107,14 @@ public class GameService {
      */
     public boolean isGameCached(Integer appId) {
         return appId != null && gameRepository.existsByAppId(appId);
+    }
+
+    /**
+     * Clear all cached game data.
+     * Use this to force re-fetching of all game details.
+     */
+    @Transactional
+    public void clearCache() {
+        gameRepository.deleteAll();
     }
 }

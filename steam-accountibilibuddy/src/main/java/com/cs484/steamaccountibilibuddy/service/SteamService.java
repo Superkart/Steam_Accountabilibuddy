@@ -72,40 +72,68 @@ public class SteamService {
             if (games == null) return Collections.emptyList();
 
             // Filter to only include games with 2 hours or less of playtime
-            // This focuses on unplayed/little-played games for recommendations
-            return games.stream()
+            List<Map<String, Object>> filteredGames = games.stream()
                 .filter(g -> {
                     Number playtimeNum = (Number) g.getOrDefault("playtime_forever", 0);
                     int playtimeMinutes = playtimeNum.intValue();
                     double playtimeHours = playtimeMinutes / 60.0;
                     return playtimeHours <= 2.0;
                 })
-                .map(g -> {
-                Number appidNum = (Number) g.get("appid");
-                Integer appid = appidNum != null ? appidNum.intValue() : null;
-                String name = (String) g.get("name");
-                Number playtimeNum = (Number) g.getOrDefault("playtime_forever", 0);
-                int playtimeMinutes = playtimeNum.intValue();
-                String imgIcon = (String) g.getOrDefault("img_icon_url", "");
-                String imgSmall = appid != null ? "https://media.steampowered.com/steamcommunity/public/images/apps/" + appid + "/" + imgIcon + ".jpg" : null;
+                .collect(Collectors.toList());
 
-                // Fetch game details (tags) from cache or API
-                List<String> tags = Collections.emptyList();
-                if (appid != null) {
-                    GameDetailsDto details = fetchGameDetails(appid);
-                    if (details != null && details.getTags() != null) {
-                        tags = details.getTags();
-                    }
+            // Extract all app IDs for batch cache lookup
+            List<Integer> appIds = filteredGames.stream()
+                    .map(g -> {
+                        Number appidNum = (Number) g.get("appid");
+                        return appidNum != null ? appidNum.intValue() : null;
+                    })
+                    .filter(appId -> appId != null)
+                    .collect(Collectors.toList());
+
+            // Batch fetch cached game details
+            Map<Integer, GameDetailsDto> cachedGames = gameService.batchGetGamesFromCache(appIds);
+
+            // Find games not in cache and fetch them
+            List<Integer> uncachedAppIds = appIds.stream()
+                    .filter(appId -> !cachedGames.containsKey(appId))
+                    .collect(Collectors.toList());
+
+            // Fetch uncached games one by one (they'll be added to cache)
+            for (Integer appId : uncachedAppIds) {
+                GameDetailsDto details = fetchGameDetails(appId);
+                if (details != null) {
+                    cachedGames.put(appId, details);
                 }
+            }
 
-                OwnedGameDto dto = new OwnedGameDto();
-                dto.setAppId(appid);
-                dto.setName(name);
-                dto.setPlaytimeHours(Math.round((playtimeMinutes / 60.0) * 10.0) / 10.0);
-                dto.setImgSmallUrl(imgSmall);
-                dto.setTags(tags);
-                return dto;
-            }).collect(Collectors.toList());
+            // Build DTOs using cached data
+            return filteredGames.stream()
+                .map(g -> {
+                    Number appidNum = (Number) g.get("appid");
+                    Integer appid = appidNum != null ? appidNum.intValue() : null;
+                    String name = (String) g.get("name");
+                    Number playtimeNum = (Number) g.getOrDefault("playtime_forever", 0);
+                    int playtimeMinutes = playtimeNum.intValue();
+                    String imgIcon = (String) g.getOrDefault("img_icon_url", "");
+                    String imgSmall = appid != null ? "https://media.steampowered.com/steamcommunity/public/images/apps/" + appid + "/" + imgIcon + ".jpg" : null;
+
+                    // Get tags from batch-loaded cache
+                    List<String> tags = Collections.emptyList();
+                    if (appid != null && cachedGames.containsKey(appid)) {
+                        GameDetailsDto details = cachedGames.get(appid);
+                        if (details != null && details.getTags() != null) {
+                            tags = details.getTags();
+                        }
+                    }
+
+                    OwnedGameDto dto = new OwnedGameDto();
+                    dto.setAppId(appid);
+                    dto.setName(name);
+                    dto.setPlaytimeHours(Math.round((playtimeMinutes / 60.0) * 10.0) / 10.0);
+                    dto.setImgSmallUrl(imgSmall);
+                    dto.setTags(tags);
+                    return dto;
+                }).collect(Collectors.toList());
         } catch (WebClientResponseException e) {
             // Handle HTTP errors (403 Forbidden, 401 Unauthorized, etc.)
             if (e.getStatusCode().is4xxClientError()) {
@@ -143,7 +171,32 @@ public class SteamService {
 
             List<Map<String, Object>> items = (List<Map<String, Object>>) itemsObj;
 
-            // First pass: Build DTOs with game details from cache/API
+            // Extract all app IDs for batch cache lookup
+            List<Integer> appIds = items.stream()
+                    .map(item -> {
+                        Number appidNum = (Number) item.get("appid");
+                        return appidNum != null ? appidNum.intValue() : null;
+                    })
+                    .filter(appId -> appId != null)
+                    .collect(Collectors.toList());
+
+            // Batch fetch cached game details
+            Map<Integer, GameDetailsDto> cachedGames = gameService.batchGetGamesFromCache(appIds);
+
+            // Find games not in cache and fetch them
+            List<Integer> uncachedAppIds = appIds.stream()
+                    .filter(appId -> !cachedGames.containsKey(appId))
+                    .collect(Collectors.toList());
+
+            // Fetch uncached games one by one (they'll be added to cache)
+            for (Integer appId : uncachedAppIds) {
+                GameDetailsDto details = fetchGameDetails(appId);
+                if (details != null) {
+                    cachedGames.put(appId, details);
+                }
+            }
+
+            // Build DTOs with game details from batch-loaded cache
             List<WishlistEntryDto> wishlistEntries = items.stream().map(item -> {
                 Number appidNum = (Number) item.get("appid");
                 Integer appId = appidNum != null ? appidNum.intValue() : null;
@@ -154,15 +207,20 @@ public class SteamService {
                 Number dateAddedNum = (Number) item.getOrDefault("date_added", 0);
                 long dateAdded = dateAddedNum != null ? dateAddedNum.longValue() : 0L;
 
-                // Fetch game details (name and tags) from cache or Steam Store API
+                // Get game details from batch-loaded cache
                 String name = null;
                 List<String> tags = Collections.emptyList();
-                if (appId != null) {
-                    GameDetailsDto details = fetchGameDetails(appId);
+                if (appId != null && cachedGames.containsKey(appId)) {
+                    GameDetailsDto details = cachedGames.get(appId);
                     if (details != null) {
                         name = details.getName();
                         tags = details.getTags() != null ? details.getTags() : Collections.emptyList();
                     }
+                }
+
+                // Fallback for games not found in cache
+                if (name == null && appId != null) {
+                    name = "Unknown Game (App " + appId + ")";
                 }
 
                 WishlistEntryDto dto = new WishlistEntryDto();
@@ -174,12 +232,7 @@ public class SteamService {
                 return dto;
             }).collect(Collectors.toList());
 
-            // Second pass: Batch fetch prices for all wishlist items
-            List<Integer> appIds = wishlistEntries.stream()
-                    .map(WishlistEntryDto::getAppId)
-                    .filter(id -> id != null)
-                    .collect(Collectors.toList());
-
+            // Second pass: Batch fetch prices for all wishlist items (reuse appIds list)
             if (!appIds.isEmpty()) {
                 Map<Integer, java.math.BigDecimal> prices = steamBatchService.batchGetPrices(appIds, "US");
                 wishlistEntries.forEach(entry -> {
@@ -244,34 +297,25 @@ public class SteamService {
             }
 
             Map<String, Object> data = (Map<String, Object>) appData.get("data");
-            if (data == null) return null;
+            if (data == null) {
+                System.out.println("WARNING: AppId " + appId + " has no data from Steam Store API (unreleased or removed game)");
+                return null;
+            }
 
             String name = (String) data.get("name");
 
-            // Extract tags from categories/genres
-            List<String> tags = new ArrayList<>();
-
-            // Get genres (more general categorization)
-            List<Map<String, Object>> genres = (List<Map<String, Object>>) data.get("genres");
-            if (genres != null) {
-                genres.forEach(genre -> {
-                    String description = (String) genre.get("description");
-                    if (description != null) tags.add(description);
-                });
+            // Don't cache games without a name - they might be unreleased/not yet in store
+            if (name == null || name.isBlank()) {
+                System.out.println("WARNING: AppId " + appId + " has no name from Steam Store API (likely unreleased game)");
+                return null;
             }
 
-            // Get categories (features like "Single-player", "Multi-player", etc.)
-            List<Map<String, Object>> categories = (List<Map<String, Object>>) data.get("categories");
-            if (categories != null) {
-                categories.forEach(category -> {
-                    String description = (String) category.get("description");
-                    if (description != null) tags.add(description);
-                });
-            }
+            // Fetch community tags from SteamSpy API
+            List<String> tags = fetchCommunityTagsFromSteamSpy(appId);
 
             // Debug logging for games with no tags
             if (tags.isEmpty()) {
-                System.out.println("WARNING: AppId " + appId + " (" + name + ") has no genres/categories in Steam API response");
+                System.out.println("WARNING: AppId " + appId + " (" + name + ") has no community tags from SteamSpy");
             }
 
             GameDetailsDto gameDetails = new GameDetailsDto(name, tags);
@@ -291,6 +335,51 @@ public class SteamService {
             // Log error and return null if fetching fails
             System.err.println("Error fetching game details for appId " + appId + ": " + e.getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Fetches community tags from SteamSpy API.
+     * SteamSpy provides user-generated tags which are more useful for finding similar games.
+     *
+     * @param appId The Steam app ID
+     * @return List of community tags, or empty list if the request fails
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> fetchCommunityTagsFromSteamSpy(Integer appId) {
+        if (appId == null) return Collections.emptyList();
+
+        try {
+            String uri = "https://steamspy.com/api.php?request=appdetails&appid={appId}";
+
+            Map<String, Object> resp = webClient.get()
+                    .uri(uri, appId)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            if (resp == null) return Collections.emptyList();
+
+            // SteamSpy returns tags as a Map<String, Integer> where key is tag name and value is vote count
+            Object tagsObj = resp.get("tags");
+            if (!(tagsObj instanceof Map)) return Collections.emptyList();
+
+            Map<String, Object> tagsMap = (Map<String, Object>) tagsObj;
+
+            // Convert tags map to sorted list by vote count (descending), take top 10
+            return tagsMap.entrySet().stream()
+                    .sorted((a, b) -> {
+                        Integer countA = a.getValue() instanceof Number ? ((Number) a.getValue()).intValue() : 0;
+                        Integer countB = b.getValue() instanceof Number ? ((Number) b.getValue()).intValue() : 0;
+                        return countB.compareTo(countA); // Descending order
+                    })
+                    .limit(10)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error fetching SteamSpy tags for appId " + appId + ": " + e.getMessage());
+            return Collections.emptyList();
         }
     }
 
