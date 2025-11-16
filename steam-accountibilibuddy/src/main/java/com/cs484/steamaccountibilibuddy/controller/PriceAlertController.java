@@ -1,6 +1,7 @@
 package com.cs484.steamaccountibilibuddy.controller;
 
 import com.cs484.steamaccountibilibuddy.entity.PriceAlert;
+import com.cs484.steamaccountibilibuddy.scheduler.PriceCheckScheduler;
 import com.cs484.steamaccountibilibuddy.security.SecurityUtils;
 import com.cs484.steamaccountibilibuddy.service.PriceAlertService;
 import org.springframework.http.HttpStatus;
@@ -16,9 +17,11 @@ import java.util.stream.Collectors;
 @RequestMapping("/price-alerts")
 public class PriceAlertController {
     private final PriceAlertService priceAlertService;
+    private final PriceCheckScheduler priceCheckScheduler;
 
-    public PriceAlertController(PriceAlertService priceAlertService) {
+    public PriceAlertController(PriceAlertService priceAlertService, PriceCheckScheduler priceCheckScheduler) {
         this.priceAlertService = priceAlertService;
+        this.priceCheckScheduler = priceCheckScheduler;
     }
 
     /**
@@ -134,6 +137,32 @@ public class PriceAlertController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to delete price alerts: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Manually trigger price check for all alerts (for testing).
+     * Requires authentication.
+     */
+    @PostMapping("/check-now")
+    public ResponseEntity<?> checkPricesNow() {
+        String steamId = SecurityUtils.getCurrentSteamId();
+        if (steamId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Not authenticated"));
+        }
+
+        try {
+            // Trigger manual price check synchronously
+            priceCheckScheduler.manualPriceCheck();
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Price check completed. Check your email if any alerts were triggered."
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to trigger price check: " + e.getMessage()));
         }
     }
 

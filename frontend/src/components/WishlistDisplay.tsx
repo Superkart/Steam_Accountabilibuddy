@@ -270,6 +270,7 @@ export const WishlistDisplay = () => {
                     appId={game.appId}
                     gameName={game.name}
                     currentPrice={game.currentPrice}
+                    originalPrice={game.originalPrice}
                     hasAlert={priceAlerts.some(alert => alert.appId === game.appId)}
                     onAlertChange={loadPriceAlerts}
                   />

@@ -74,10 +74,27 @@
   font-weight: 400;
 }
 
+.price-info-display {
+  margin-bottom: 20px;
+}
+
+.original-price-display {
+  color: #beee11;
+  font-size: 14px;
+  margin: 0 0 5px 0;
+  font-weight: 500;
+}
+
 .current-price-display {
   color: #8f98a0;
   font-size: 14px;
-  margin: 0 0 20px 0;
+  margin: 0;
+}
+
+.sale-indicator {
+  color: #beee11;
+  font-weight: 600;
+  font-size: 13px;
 }
 
 .form-group {

@@ -7,11 +7,12 @@ interface PriceAlertButtonProps {
   appId: number;
   gameName: string;
   currentPrice: number | null;
+  originalPrice: number | null;
   hasAlert: boolean;
   onAlertChange: () => void;
 }
 
-export const PriceAlertButton = ({ appId, gameName, currentPrice, hasAlert, onAlertChange }: PriceAlertButtonProps) => {
+export const PriceAlertButton = ({ appId, gameName, currentPrice, originalPrice, hasAlert, onAlertChange }: PriceAlertButtonProps) => {
   const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [targetPrice, setTargetPrice] = useState('');
@@ -24,9 +25,11 @@ export const PriceAlertButton = ({ appId, gameName, currentPrice, hasAlert, onAl
       return;
     }
 
-    if (currentPrice !== null && currentPrice !== undefined) {
-      // Default to 10% off current price
-      setTargetPrice((currentPrice * 0.9).toFixed(2));
+    // Use original price for default if available, otherwise use current price
+    const basePrice = originalPrice !== null && originalPrice !== undefined ? originalPrice : currentPrice;
+    if (basePrice !== null && basePrice !== undefined) {
+      // Default to 10% off base price
+      setTargetPrice((basePrice * 0.9).toFixed(2));
     }
     setShowModal(true);
     setError('');
@@ -41,8 +44,10 @@ export const PriceAlertButton = ({ appId, gameName, currentPrice, hasAlert, onAl
       return;
     }
 
-    if (currentPrice !== null && price >= currentPrice) {
-      setError('Target price should be lower than current price');
+    // Validate against original price (or current price if no sale)
+    const basePrice = originalPrice !== null && originalPrice !== undefined ? originalPrice : currentPrice;
+    if (basePrice !== null && price >= basePrice) {
+      setError('Target price should be lower than original price');
       return;
     }
 
@@ -92,10 +97,22 @@ export const PriceAlertButton = ({ appId, gameName, currentPrice, hasAlert, onAl
             <h3>Set Price Alert</h3>
             <p className="modal-game-name">{gameName}</p>
 
-            {currentPrice !== null && currentPrice !== undefined && (
-              <p className="current-price-display">
-                Current price: ${currentPrice.toFixed(2)}
-              </p>
+            {(originalPrice !== null || currentPrice !== null) && (
+              <div className="price-info-display">
+                {originalPrice !== null && originalPrice !== undefined && (
+                  <p className="original-price-display">
+                    Original price: ${originalPrice.toFixed(2)}
+                  </p>
+                )}
+                {currentPrice !== null && currentPrice !== undefined && (
+                  <p className="current-price-display">
+                    Current price: ${currentPrice.toFixed(2)}
+                    {originalPrice && currentPrice < originalPrice && (
+                      <span className="sale-indicator"> (On Sale!)</span>
+                    )}
+                  </p>
+                )}
+              </div>
             )}
 
             <form onSubmit={handleCreateAlert}>
