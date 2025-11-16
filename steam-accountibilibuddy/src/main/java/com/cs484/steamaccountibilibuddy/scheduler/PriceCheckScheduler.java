@@ -157,6 +157,7 @@ public class PriceCheckScheduler {
     /**
      * Manual trigger for testing (can be called via a controller if needed).
      */
+    @org.springframework.transaction.annotation.Transactional
     public void manualPriceCheck() {
         System.out.println("Manual price check triggered");
         checkPriceAlerts();
