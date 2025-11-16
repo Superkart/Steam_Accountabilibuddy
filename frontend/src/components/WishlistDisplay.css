@@ -1,5 +1,6 @@
 .wishlist-container {
-  width: 97%;
+  max-width: 940px;
+  margin: 0 auto;
   padding: 20px;
   background: linear-gradient(to bottom, rgba(27, 40, 56, 0.4) 0%, rgba(27, 40, 56, 0) 100%);
 }
