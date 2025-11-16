@@ -108,6 +108,36 @@ public class PriceAlertController {
     }
 
     /**
+     * Delete all price alerts for the authenticated user.
+     */
+    @DeleteMapping
+    public ResponseEntity<?> deleteAllAlerts() {
+        String steamId = SecurityUtils.getCurrentSteamId();
+        if (steamId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Not authenticated"));
+        }
+
+        try {
+            List<PriceAlert> alerts = priceAlertService.getAllAlertsForUser(steamId);
+            int count = alerts.size();
+
+            for (PriceAlert alert : alerts) {
+                priceAlertService.deletePriceAlert(steamId, alert.getAppId());
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "All price alerts deleted successfully",
+                    "deletedCount", count
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to delete price alerts: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Helper method to convert PriceAlert entity to a map for JSON response.
      */
     private Map<String, Object> convertToMap(PriceAlert alert) {

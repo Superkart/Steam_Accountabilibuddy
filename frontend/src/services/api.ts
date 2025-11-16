@@ -104,6 +104,30 @@ export const authApi = {
       throw new Error('Failed to delete price alert');
     }
   },
+
+  // Delete all price alerts
+  deleteAllPriceAlerts: async (): Promise<void> => {
+    try {
+      await api.delete('/price-alerts');
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to delete all price alerts');
+    }
+  },
+
+  // Delete user email
+  deleteEmail: async (): Promise<void> => {
+    try {
+      await api.delete('/user/email');
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to delete email');
+    }
+  },
 };
 
 export default api;
