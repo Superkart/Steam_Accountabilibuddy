@@ -44,6 +44,7 @@ export const WishlistDisplay = () => {
         authApi.getWishlist(),
         authApi.getLibrary()
       ]);
+      console.log('Wishlist data:', wishlistData);
       setWishlist(wishlistData);
       setLibrary(libraryData);
     } catch (err) {
@@ -237,7 +238,21 @@ export const WishlistDisplay = () => {
                   <div className="price-container">
                     {game.currentPrice > 0 ? (
                       <div className="price-box">
-                        <span className="price">${Number(game.currentPrice).toFixed(2)}</span>
+                        {game.discountPercent && game.discountPercent > 0 ? (
+                          <div className="sale-price-container">
+                            <div className="discount-badge">-{game.discountPercent}%</div>
+                            <div className="price-details">
+                              <span className="original-price">
+                                ${Number(game.originalPrice).toFixed(2)}
+                              </span>
+                              <span className="sale-price">
+                                ${Number(game.currentPrice).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="price">${Number(game.currentPrice).toFixed(2)}</span>
+                        )}
                       </div>
                     ) : (
                       <div className="free-box">

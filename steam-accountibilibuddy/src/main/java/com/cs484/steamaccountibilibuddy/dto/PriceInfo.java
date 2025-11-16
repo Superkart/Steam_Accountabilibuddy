@@ -2,19 +2,15 @@ package com.cs484.steamaccountibilibuddy.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
-public class WishlistEntryDto {
-    private Integer appId;
-    private String name;
-    private Long addedAt;
-    private String priority;
-    private List<String> tags;
+@AllArgsConstructor
+public class PriceInfo {
     private BigDecimal currentPrice;
     private BigDecimal originalPrice;
-    private Integer discountPercent;
+    private Integer discountPercent;  // null if not on sale, otherwise 0-100
 }

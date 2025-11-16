@@ -265,6 +265,41 @@
   font-size: 12px;
 }
 
+/* Sale/Discount Styling */
+.sale-price-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.discount-badge {
+  background: linear-gradient(to bottom, #75b022 5%, #588a1b 95%);
+  color: #beee11;
+  padding: 6px 10px;
+  border-radius: 2px;
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.price-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.original-price {
+  color: #738895;
+  font-size: 12px;
+  text-decoration: line-through;
+}
+
+.sale-price {
+  color: #beee11;
+  font-size: 18px;
+  font-weight: 500;
+}
+
 .item-actions {
   display: flex;
   flex-direction: column;

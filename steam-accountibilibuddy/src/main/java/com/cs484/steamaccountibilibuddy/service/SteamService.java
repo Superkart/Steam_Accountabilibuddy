@@ -15,6 +15,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import com.cs484.steamaccountibilibuddy.dto.GameDetailsDto;
 import com.cs484.steamaccountibilibuddy.dto.OwnedGameDto;
+import com.cs484.steamaccountibilibuddy.dto.PriceInfo;
 import com.cs484.steamaccountibilibuddy.dto.SteamProfileDto;
 import com.cs484.steamaccountibilibuddy.dto.WishlistEntryDto;
 import com.cs484.steamaccountibilibuddy.exception.PrivateProfileException;
@@ -234,10 +235,15 @@ public class SteamService {
 
             // Second pass: Batch fetch prices for all wishlist items (reuse appIds list)
             if (!appIds.isEmpty()) {
-                Map<Integer, java.math.BigDecimal> prices = steamBatchService.batchGetPrices(appIds, "US");
+                Map<Integer, PriceInfo> priceInfoMap = steamBatchService.batchGetPrices(appIds, "US");
                 wishlistEntries.forEach(entry -> {
                     if (entry.getAppId() != null) {
-                        entry.setCurrentPrice(prices.get(entry.getAppId()));
+                        PriceInfo priceInfo = priceInfoMap.get(entry.getAppId());
+                        if (priceInfo != null) {
+                            entry.setCurrentPrice(priceInfo.getCurrentPrice());
+                            entry.setOriginalPrice(priceInfo.getOriginalPrice());
+                            entry.setDiscountPercent(priceInfo.getDiscountPercent());
+                        }
                     }
                 });
             }

@@ -1,12 +1,17 @@
 package com.cs484.steamaccountibilibuddy.service;
 
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.math.BigDecimal;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.cs484.steamaccountibilibuddy.dto.PriceInfo;
 
 /**
  * Service for making batch requests to Steam's IStoreBrowseService API.
@@ -27,9 +32,9 @@ public class SteamBatchService {
      *
      * @param appIds List of Steam app IDs to fetch (recommend batches of 100-500)
      * @param countryCode Country code for pricing (e.g., "US", "GB")
-     * @return Map of appId to price in BigDecimal, or empty map if fetch fails
+     * @return Map of appId to PriceInfo (with current price, original price, and discount), or empty map if fetch fails
      */
-    public Map<Integer, BigDecimal> batchGetPrices(List<Integer> appIds, String countryCode) {
+    public Map<Integer, PriceInfo> batchGetPrices(List<Integer> appIds, String countryCode) {
         if (appIds == null || appIds.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -63,8 +68,8 @@ public class SteamBatchService {
                 return Collections.emptyMap();
             }
 
-            // Extract prices from JSON response
-            Map<Integer, BigDecimal> priceMap = new HashMap<>();
+            // Extract prices and discount info from JSON response
+            Map<Integer, PriceInfo> priceMap = new HashMap<>();
             com.fasterxml.jackson.databind.JsonNode storeItems = responseNode.get("store_items");
 
             for (com.fasterxml.jackson.databind.JsonNode item : storeItems) {
@@ -74,18 +79,43 @@ public class SteamBatchService {
 
                 // Check if game is free
                 if (item.has("is_free") && item.get("is_free").asBoolean()) {
-                    priceMap.put(appId, BigDecimal.ZERO);
+                    priceMap.put(appId, new PriceInfo(BigDecimal.ZERO, BigDecimal.ZERO, null));
                     continue;
                 }
 
                 // Get price from best_purchase_option
                 if (item.has("best_purchase_option")) {
                     com.fasterxml.jackson.databind.JsonNode purchaseOption = item.get("best_purchase_option");
+
+                    BigDecimal currentPrice = null;
+                    BigDecimal originalPrice = null;
+                    Integer discountPercent = null;
+
+                    // Get final (current) price
                     if (purchaseOption.has("final_price_in_cents")) {
-                        // Price is in cents, convert to dollars
                         long priceCents = purchaseOption.get("final_price_in_cents").asLong();
-                        BigDecimal price = BigDecimal.valueOf(priceCents).divide(BigDecimal.valueOf(100));
-                        priceMap.put(appId, price);
+                        currentPrice = BigDecimal.valueOf(priceCents).divide(BigDecimal.valueOf(100));
+                    }
+
+                    // Get original price (before discount)
+                    if (purchaseOption.has("original_price_in_cents")) {
+                        long originalPriceCents = purchaseOption.get("original_price_in_cents").asLong();
+                        originalPrice = BigDecimal.valueOf(originalPriceCents).divide(BigDecimal.valueOf(100));
+                    }
+
+                    // Get discount percentage
+                    if (purchaseOption.has("discount_pct")) {
+                        discountPercent = purchaseOption.get("discount_pct").asInt();
+                    }
+
+                    // If no original price but we have a current price, set original = current (no discount)
+                    if (originalPrice == null && currentPrice != null) {
+                        originalPrice = currentPrice;
+                    }
+
+                    if (currentPrice != null) {
+                        //System.out.println("AppId " + appId + ": currentPrice=" + currentPrice + ", originalPrice=" + originalPrice + ", discountPercent=" + discountPercent);
+                        priceMap.put(appId, new PriceInfo(currentPrice, originalPrice, discountPercent));
                     }
                 }
             }
@@ -139,11 +169,11 @@ public class SteamBatchService {
     }
 
     /**
-     * Fetch price for a single game.
+     * Fetch price info for a single game.
      * Note: For multiple games, use batchGetPrices() instead for better performance.
      */
-    public BigDecimal getSinglePrice(Integer appId, String countryCode) {
-        Map<Integer, BigDecimal> prices = batchGetPrices(List.of(appId), countryCode);
+    public PriceInfo getSinglePrice(Integer appId, String countryCode) {
+        Map<Integer, PriceInfo> prices = batchGetPrices(List.of(appId), countryCode);
         return prices.getOrDefault(appId, null);
     }
 }

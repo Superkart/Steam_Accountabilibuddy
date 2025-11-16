@@ -1,17 +1,22 @@
 package com.cs484.steamaccountibilibuddy.scheduler;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import com.cs484.steamaccountibilibuddy.dto.PriceInfo;
 import com.cs484.steamaccountibilibuddy.entity.PriceAlert;
 import com.cs484.steamaccountibilibuddy.entity.User;
 import com.cs484.steamaccountibilibuddy.service.EmailService;
 import com.cs484.steamaccountibilibuddy.service.PriceAlertService;
 import com.cs484.steamaccountibilibuddy.service.SteamBatchService;
 import com.cs484.steamaccountibilibuddy.service.UserService;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-
-import java.math.BigDecimal;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 public class PriceCheckScheduler {
@@ -62,14 +67,14 @@ public class PriceCheckScheduler {
 
             // Split into batches of 500 to avoid overwhelming the API
             int batchSize = 500;
-            Map<Integer, BigDecimal> allPrices = new java.util.HashMap<>();
+            Map<Integer, PriceInfo> allPrices = new java.util.HashMap<>();
 
             for (int i = 0; i < appIds.size(); i += batchSize) {
                 int end = Math.min(i + batchSize, appIds.size());
                 List<Integer> batch = appIds.subList(i, end);
 
                 System.out.println("Fetching batch " + (i / batchSize + 1) + " (" + batch.size() + " games)...");
-                Map<Integer, BigDecimal> batchPrices = steamBatchService.batchGetPrices(batch, "US");
+                Map<Integer, PriceInfo> batchPrices = steamBatchService.batchGetPrices(batch, "US");
                 allPrices.putAll(batchPrices);
 
                 // Small delay between batches to be respectful to Steam's API
@@ -88,11 +93,11 @@ public class PriceCheckScheduler {
 
             // Step 1: Update all alerts with current prices
             for (PriceAlert alert : allAlerts) {
-                BigDecimal currentPrice = allPrices.get(alert.getAppId());
-                if (currentPrice != null) {
+                PriceInfo currentPrice = allPrices.get(alert.getAppId());
+                if (currentPrice.getCurrentPrice() != null) {
                     pricesChecked++;
                     // Update alert with current price (also resets notification if price went above target)
-                    priceAlertService.updateAlertPrice(alert, currentPrice);
+                    priceAlertService.updateAlertPrice(alert, currentPrice.getCurrentPrice());
                 }
             }
 
@@ -100,17 +105,17 @@ public class PriceCheckScheduler {
             Map<String, Map<PriceAlert, BigDecimal>> alertsByUser = new HashMap<>();
 
             for (PriceAlert alert : allAlerts) {
-                BigDecimal currentPrice = allPrices.get(alert.getAppId());
+                PriceInfo currentPrice = allPrices.get(alert.getAppId());
 
                 // Check if price is below target AND we haven't notified yet
                 if (currentPrice != null &&
-                    currentPrice.compareTo(alert.getTargetPrice()) < 0 &&
+                    currentPrice.getCurrentPrice().compareTo(alert.getTargetPrice()) < 0 &&
                     alert.getLastNotificationSent() == null) {
 
                     // Add to user's alert map
                     alertsByUser
                         .computeIfAbsent(alert.getSteamId(), k -> new HashMap<>())
-                        .put(alert, currentPrice);
+                        .put(alert, currentPrice.getCurrentPrice());
                 }
             }
 
