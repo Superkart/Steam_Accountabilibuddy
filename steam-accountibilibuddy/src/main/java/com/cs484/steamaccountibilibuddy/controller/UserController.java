@@ -1,21 +1,26 @@
 package com.cs484.steamaccountibilibuddy.controller;
 
+import com.cs484.steamaccountibilibuddy.entity.PriceAlert;
 import com.cs484.steamaccountibilibuddy.entity.User;
 import com.cs484.steamaccountibilibuddy.security.SecurityUtils;
+import com.cs484.steamaccountibilibuddy.service.PriceAlertService;
 import com.cs484.steamaccountibilibuddy.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
     private final UserService userService;
+    private final PriceAlertService priceAlertService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, PriceAlertService priceAlertService) {
         this.userService = userService;
+        this.priceAlertService = priceAlertService;
     }
 
     /**
@@ -72,5 +77,42 @@ public class UserController {
                 )))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "User not found")));
+    }
+
+    /**
+     * Delete the user's email address and all associated price alerts.
+     * Since price alerts require an email for notifications, they are automatically removed.
+     * Requires authentication.
+     */
+    @DeleteMapping("/email")
+    public ResponseEntity<?> deleteEmail() {
+        String steamId = SecurityUtils.getCurrentSteamId();
+        if (steamId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Not authenticated"));
+        }
+
+        try {
+            // Get count of alerts before deletion
+            List<PriceAlert> alerts = priceAlertService.getAllAlertsForUser(steamId);
+            int alertCount = alerts.size();
+
+            // Delete all price alerts first (since they require email)
+            for (PriceAlert alert : alerts) {
+                priceAlertService.deletePriceAlert(steamId, alert.getAppId());
+            }
+
+            // Then delete the email
+            userService.updateUserEmail(steamId, null);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Email deleted successfully",
+                    "deletedAlerts", alertCount
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to delete email: " + e.getMessage()));
+        }
     }
 }

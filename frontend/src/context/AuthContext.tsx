@@ -9,6 +9,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   updateEmail: (email: string) => Promise<void>;
+  deleteEmail: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,6 +59,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const deleteEmail = async () => {
+    await authApi.deleteEmail();
+    if (user) {
+      setUser({ ...user, email: undefined });
+    }
+  };
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -77,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth, updateEmail }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth, updateEmail, deleteEmail }}>
       {children}
     </AuthContext.Provider>
   );

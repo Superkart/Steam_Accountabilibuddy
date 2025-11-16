@@ -5,12 +5,13 @@ import type { PriceAlert } from '../types/auth';
 import './EmailSettings.css';
 
 export const EmailSettings = () => {
-  const { user, updateEmail } = useAuth();
+  const { user, updateEmail, deleteEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadPriceAlerts();
@@ -69,6 +70,47 @@ export const EmailSettings = () => {
     }
   };
 
+  const handleDeleteEmail = async () => {
+    if (!confirm('Are you sure you want to remove your email? This will also delete all your price alerts since they require email for notifications.')) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      setSaveMessage('');
+      await deleteEmail();
+      setEmail('');
+      setPriceAlerts([]); // Clear price alerts since backend deletes them too
+      setSaveMessage('Email and price alerts removed successfully!');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : 'Failed to remove email');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteAllAlerts = async () => {
+    if (!priceAlerts || priceAlerts.length === 0) {
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete all ${priceAlerts.length} price alerts? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await authApi.deleteAllPriceAlerts();
+      setPriceAlerts([]);
+      alert('All price alerts deleted successfully!');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to delete all price alerts');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="email-settings-container">
       <div className="settings-section">
@@ -101,10 +143,33 @@ export const EmailSettings = () => {
             {saveMessage}
           </div>
         )}
+
+        {user?.email && (
+          <div className="email-actions">
+            <button
+              onClick={handleDeleteEmail}
+              className="delete-email-button"
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Removing...' : 'Remove Email'}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="settings-section">
-        <h3>Active Price Alerts ({priceAlerts?.length || 0})</h3>
+        <div className="alerts-header">
+          <h3>Active Price Alerts ({priceAlerts?.length || 0})</h3>
+          {priceAlerts && priceAlerts.length > 0 && (
+            <button
+              onClick={handleDeleteAllAlerts}
+              className="delete-all-button"
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete All Alerts'}
+            </button>
+          )}
+        </div>
         <p className="settings-description">
           {user?.email
             ? 'You will receive daily email notifications when these games drop below your target price.'
