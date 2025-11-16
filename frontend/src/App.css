@@ -41,42 +41,126 @@
 
 .App {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-header {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.3) 100%);
+  background: linear-gradient(to bottom, rgba(27, 40, 56, 0.9) 0%, rgba(27, 40, 56, 0.7) 100%);
   padding: 20px 40px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
-  margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(103, 193, 245, 0.3);
+}
+
+.header-info {
   display: flex;
   align-items: center;
   gap: 20px;
-  flex-wrap: wrap;
 }
 
-.app-header h1 {
+.header-info h1 {
   color: white;
-  margin: 0;
   font-size: 24px;
   font-weight: 300;
-}
-
-.app-header p {
-  color: #8f98a0;
   margin: 0;
+  letter-spacing: 1px;
+}
+
+.header-info p {
+  color: #8f98a0;
+  font-size: 13px;
+  margin: 0;
+}
+
+.user-email {
+  color: #67c1f5 !important;
+}
+
+.profile-picture {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid #67c1f5;
+}
+
+.logout-button {
+  padding: 10px 20px;
+  background: linear-gradient(to bottom, #dc3545 5%, #a82835 95%);
+  color: white;
+  border: none;
+  border-radius: 2px;
   font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.app-header img {
-  border: 2px solid rgba(0, 0, 0, 0.3);
+.logout-button:hover {
+  background: linear-gradient(to bottom, #ff4458 5%, #c73545 95%);
 }
 
-.app-header button {
-  margin-left: auto;
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  gap: 0;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0 40px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.tab-button {
+  padding: 15px 30px;
+  background: transparent;
+  border: none;
+  color: #8f98a0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 3px solid transparent;
+  position: relative;
+}
+
+.tab-button:hover {
+  color: #67c1f5;
+  background: rgba(103, 193, 245, 0.1);
+}
+
+.tab-button.active {
+  color: white;
+  border-bottom-color: #67c1f5;
+  background: rgba(103, 193, 245, 0.15);
 }
 
 main {
-  width: 100%;
-  display: flex;
-  justify-content: center;
+  flex: 1;
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px 20px;
+  }
+
+  .header-info {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .tab-navigation {
+    padding: 0 20px;
+  }
+
+  .tab-button {
+    padding: 12px 20px;
+    font-size: 13px;
+  }
 }

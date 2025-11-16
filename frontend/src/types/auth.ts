@@ -2,6 +2,7 @@ export interface User {
   steamId: string;
   username: string;
   profilePictureUrl: string;
+  email?: string;
   authenticated: boolean;
 }
 
@@ -9,6 +10,7 @@ export interface AuthResponse {
   steamId: string;
   username: string;
   profilePictureUrl: string;
+  email?: string;
   authenticated: boolean;
   message?: string;
 }
@@ -28,4 +30,13 @@ export interface WishlistEntry {
   priority: string;
   tags: string[];
   currentPrice: number | null;
+}
+
+export interface PriceAlert {
+  appId: number;
+  gameName: string;
+  targetPrice: string;
+  currentPrice: string | null;
+  lastChecked: string | null;
+  createdAt: string;
 }

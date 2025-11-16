@@ -8,6 +8,7 @@ interface AuthContextType {
   login: () => void;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  updateEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,12 +21,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await authApi.checkAuth();
       if (response) {
-        setUser({
-          steamId: response.steamId,
-          username: response.username,
-          profilePictureUrl: response.profilePictureUrl,
-          authenticated: response.authenticated,
-        });
+        // Also fetch user profile to get email
+        try {
+          const profile = await authApi.getUserProfile();
+          setUser({
+            steamId: response.steamId,
+            username: response.username,
+            profilePictureUrl: response.profilePictureUrl,
+            email: profile.email,
+            authenticated: response.authenticated,
+          });
+        } catch {
+          // If profile fetch fails, still set user without email
+          setUser({
+            steamId: response.steamId,
+            username: response.username,
+            profilePictureUrl: response.profilePictureUrl,
+            authenticated: response.authenticated,
+          });
+        }
       } else {
         setUser(null);
       }
@@ -34,6 +48,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateEmail = async (email: string) => {
+    await authApi.saveEmail(email);
+    if (user) {
+      setUser({ ...user, email });
     }
   };
 
@@ -56,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth, updateEmail }}>
       {children}
     </AuthContext.Provider>
   );

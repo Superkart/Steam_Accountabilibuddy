@@ -111,13 +111,13 @@ public class PriceAlertController {
      * Helper method to convert PriceAlert entity to a map for JSON response.
      */
     private Map<String, Object> convertToMap(PriceAlert alert) {
-        return Map.of(
-                "appId", alert.getAppId(),
-                "gameName", alert.getGameName() != null ? alert.getGameName() : "",
-                "targetPrice", alert.getTargetPrice().toString(),
-                "currentPrice", alert.getCurrentPrice() != null ? alert.getCurrentPrice().toString() : null,
-                "lastChecked", alert.getLastChecked() != null ? alert.getLastChecked().toString() : null,
-                "createdAt", alert.getCreatedAt().toString()
-        );
+        Map<String, Object> map = new java.util.HashMap<>();
+        map.put("appId", alert.getAppId());
+        map.put("gameName", alert.getGameName() != null ? alert.getGameName() : "");
+        map.put("targetPrice", alert.getTargetPrice().toString());
+        map.put("currentPrice", alert.getCurrentPrice() != null ? alert.getCurrentPrice().toString() : null);
+        map.put("lastChecked", alert.getLastChecked() != null ? alert.getLastChecked().toString() : null);
+        map.put("createdAt", alert.getCreatedAt().toString());
+        return map;
     }
 }

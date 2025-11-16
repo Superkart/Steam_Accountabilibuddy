@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { WishlistEntry, Game } from '../types/auth';
+import type { WishlistEntry, Game, PriceAlert } from '../types/auth';
 import { authApi } from '../services/api';
+import { PriceAlertButton } from './PriceAlertButton';
 import './WishlistDisplay.css';
 
 type SortOption = 'dateAdded' | 'priority' | 'priceAsc' | 'priceDesc';
@@ -14,10 +15,25 @@ export const WishlistDisplay = () => {
   const [expandedGameId, setExpandedGameId] = useState<number | null>(null);
   const [similarGamesMap, setSimilarGamesMap] = useState<Map<number, SimilarGameWithScore[]>>(new Map());
   const [sortBy, setSortBy] = useState<SortOption>('dateAdded');
+  const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
 
   useEffect(() => {
     loadData();
+    // Load price alerts separately without blocking wishlist display
+    loadPriceAlerts().catch(err => {
+      console.log('Price alerts not available:', err);
+    });
   }, []);
+
+  const loadPriceAlerts = async () => {
+    try {
+      const alerts = await authApi.getPriceAlerts();
+      setPriceAlerts(alerts || []);
+    } catch {
+      // User might not have email set, which is fine - just use empty array
+      setPriceAlerts([]);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -234,12 +250,21 @@ export const WishlistDisplay = () => {
                     <span className="price-unavailable">Price unavailable</span>
                   </div>
                 )}
-                <button
-                  className="similar-games-button"
-                  onClick={() => toggleSimilarGames(game.appId)}
-                >
-                  {expandedGameId === game.appId ? 'Hide' : 'Show'} Similar Games
-                </button>
+                <div className="item-actions">
+                  <PriceAlertButton
+                    appId={game.appId}
+                    gameName={game.name}
+                    currentPrice={game.currentPrice}
+                    hasAlert={priceAlerts.some(alert => alert.appId === game.appId)}
+                    onAlertChange={loadPriceAlerts}
+                  />
+                  <button
+                    className="similar-games-button"
+                    onClick={() => toggleSimilarGames(game.appId)}
+                  >
+                    {expandedGameId === game.appId ? 'Hide' : 'Show'} Similar Games
+                  </button>
+                </div>
               </div>
             </div>
 
