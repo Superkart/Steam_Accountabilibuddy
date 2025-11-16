@@ -30,6 +30,8 @@ export interface WishlistEntry {
   priority: string;
   tags: string[];
   currentPrice: number | null;
+  originalPrice: number | null;
+  discountPercent: number | null;
 }
 
 export interface PriceAlert {

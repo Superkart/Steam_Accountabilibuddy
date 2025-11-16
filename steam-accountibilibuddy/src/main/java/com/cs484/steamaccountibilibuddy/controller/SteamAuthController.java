@@ -1,13 +1,9 @@
 package com.cs484.steamaccountibilibuddy.controller;
 
-import com.cs484.steamaccountibilibuddy.dto.SteamOpenidLoginDTO;
-import com.cs484.steamaccountibilibuddy.dto.SteamProfileDto;
-import com.cs484.steamaccountibilibuddy.security.SteamAuthenticationToken;
-import com.cs484.steamaccountibilibuddy.service.SteamService;
-import com.cs484.steamaccountibilibuddy.service.UserService;
-import com.cs484.steamaccountibilibuddy.util.OpenIdUtils;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,15 +18,22 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
+import com.cs484.steamaccountibilibuddy.dto.PriceInfo;
+import com.cs484.steamaccountibilibuddy.dto.SteamOpenidLoginDTO;
+import com.cs484.steamaccountibilibuddy.dto.SteamProfileDto;
+import com.cs484.steamaccountibilibuddy.security.SteamAuthenticationToken;
+import com.cs484.steamaccountibilibuddy.service.SteamService;
+import com.cs484.steamaccountibilibuddy.service.UserService;
+import com.cs484.steamaccountibilibuddy.util.OpenIdUtils;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/auth/steam")
@@ -296,7 +299,7 @@ public class SteamAuthController {
             System.out.println("Testing batch API with " + appIdList.size() + " games from your wishlist");
 
             // Use the batch API to fetch prices
-            java.util.Map<Integer, java.math.BigDecimal> prices = steamBatchService.batchGetPrices(appIdList, "US");
+            java.util.Map<Integer, PriceInfo> prices = steamBatchService.batchGetPrices(appIdList, "US");
 
             return ResponseEntity.ok(Map.of(
                     "message", "Batch API test complete! Check console for details.",
