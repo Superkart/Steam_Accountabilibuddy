@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/price-alerts")
+@RequestMapping("/api/price-alerts")
 public class PriceAlertController {
     private final PriceAlertService priceAlertService;
     private final PriceCheckScheduler priceCheckScheduler;

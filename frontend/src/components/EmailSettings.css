@@ -141,6 +141,34 @@
   margin-bottom: 10px;
 }
 
+.alerts-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.test-email-button {
+  padding: 8px 16px;
+  background: linear-gradient(to bottom, #67c1f5 5%, #417a9b 95%);
+  border: none;
+  border-radius: 2px;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.test-email-button:hover:not(:disabled) {
+  background: linear-gradient(to bottom, #8ed4ff 5%, #5a9fc4 95%);
+}
+
+.test-email-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .delete-all-button {
   padding: 8px 16px;
   background: rgba(220, 53, 69, 0.2);
@@ -162,6 +190,25 @@
 .delete-all-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.check-message {
+  padding: 10px 12px;
+  border-radius: 2px;
+  font-size: 13px;
+  margin-bottom: 15px;
+}
+
+.check-message.success {
+  background: rgba(117, 176, 34, 0.2);
+  color: #beee11;
+  border: 1px solid rgba(117, 176, 34, 0.5);
+}
+
+.check-message.info {
+  background: rgba(103, 193, 245, 0.2);
+  color: #67c1f5;
+  border: 1px solid rgba(103, 193, 245, 0.5);
 }
 
 /* Price Alerts List */
@@ -271,8 +318,14 @@
     margin: 0;
   }
 
+  .alerts-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .test-email-button,
   .delete-all-button {
-    align-self: flex-start;
+    width: 100%;
   }
 
   .alert-item {

@@ -23,7 +23,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // Disable CSRF for API
             .authorizeHttpRequests(auth -> auth
                 // Allow public access to Steam auth endpoints
-                .requestMatchers("/auth/steam/login", "/auth/steam/return").permitAll()
+                .requestMatchers("/api/auth/steam/login", "/api/auth/steam/return").permitAll()
                 // Allow public access to error endpoints
                 .requestMatchers("/error").permitAll()
                 // Require authentication for all other endpoints

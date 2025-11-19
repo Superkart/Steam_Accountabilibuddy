@@ -12,6 +12,8 @@ export const EmailSettings = () => {
   const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCheckingPrices, setIsCheckingPrices] = useState(false);
+  const [checkMessage, setCheckMessage] = useState('');
 
   useEffect(() => {
     loadPriceAlerts();
@@ -111,6 +113,35 @@ export const EmailSettings = () => {
     }
   };
 
+  const handleTestEmailSystem = async () => {
+    if (!user?.email) {
+      setCheckMessage('Please set your email address first');
+      setTimeout(() => setCheckMessage(''), 3000);
+      return;
+    }
+
+    if (!priceAlerts || priceAlerts.length === 0) {
+      setCheckMessage('Create at least one price alert to test the email system');
+      setTimeout(() => setCheckMessage(''), 3000);
+      return;
+    }
+
+    try {
+      setIsCheckingPrices(true);
+      setCheckMessage('');
+      const result = await authApi.triggerPriceCheck();
+      setCheckMessage(result.message || 'Price check completed! Check your email if any alerts were triggered.');
+      // Reload alerts to see updated prices
+      await loadPriceAlerts();
+      setTimeout(() => setCheckMessage(''), 5000);
+    } catch (error) {
+      setCheckMessage(error instanceof Error ? error.message : 'Failed to trigger price check');
+      setTimeout(() => setCheckMessage(''), 3000);
+    } finally {
+      setIsCheckingPrices(false);
+    }
+  };
+
   return (
     <div className="email-settings-container">
       <div className="settings-section">
@@ -160,15 +191,27 @@ export const EmailSettings = () => {
       <div className="settings-section">
         <div className="alerts-header">
           <h3>Active Price Alerts ({priceAlerts?.length || 0})</h3>
-          {priceAlerts && priceAlerts.length > 0 && (
-            <button
-              onClick={handleDeleteAllAlerts}
-              className="delete-all-button"
-              disabled={isDeleting}
-            >
-              {isDeleting ? 'Deleting...' : 'Delete All Alerts'}
-            </button>
-          )}
+          <div className="alerts-actions">
+            {priceAlerts && priceAlerts.length > 0 && (
+              <>
+                <button
+                  onClick={handleTestEmailSystem}
+                  className="test-email-button"
+                  disabled={isCheckingPrices || !user?.email}
+                  title="Test email system by checking current prices and sending notifications if any alerts are triggered"
+                >
+                  {isCheckingPrices ? 'Checking...' : '📧 Test Email System'}
+                </button>
+                <button
+                  onClick={handleDeleteAllAlerts}
+                  className="delete-all-button"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete All Alerts'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
         <p className="settings-description">
           {user?.email
@@ -176,6 +219,12 @@ export const EmailSettings = () => {
             : 'Set your email address above to activate price alerts.'
           }
         </p>
+
+        {checkMessage && (
+          <div className={`check-message ${checkMessage.includes('completed') || checkMessage.includes('Check your email') ? 'success' : 'info'}`}>
+            {checkMessage}
+          </div>
+        )}
 
         {loadingAlerts ? (
           <div className="loading">Loading price alerts...</div>
