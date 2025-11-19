@@ -76,7 +76,7 @@ public class SteamAuthController {
                 .queryParam("openid.ns", "http://specs.openid.net/auth/2.0")
                 .queryParam("openid.mode", "checkid_setup")
                 .queryParam("openid.return_to", returnTo)
-                .queryParam("openid.realm", baseUrl)
+                .queryParam("openid.realm", frontendUrl)  // Must match return_to base URL
                 .queryParam("openid.identity", "http://specs.openid.net/auth/2.0/identifier_select")
                 .queryParam("openid.claimed_id", "http://specs.openid.net/auth/2.0/identifier_select")
                 .build()
