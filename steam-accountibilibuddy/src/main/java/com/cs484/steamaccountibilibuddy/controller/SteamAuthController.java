@@ -68,7 +68,8 @@ public class SteamAuthController {
 
     @GetMapping("/login")
     public ResponseEntity<Void> login() {
-        String returnTo = baseUrl + "/api/auth/steam/return";
+        // Use frontend URL so Steam redirects through Netlify proxy (for session cookie to work)
+        String returnTo = frontendUrl + "/api/auth/steam/return";
 
         String redirect = UriComponentsBuilder
                 .fromUriString(steamOpenIdEndpoint)

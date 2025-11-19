@@ -1,5 +1,5 @@
-# Netlify Configuration for SteamBuddy Frontend
-# Replace YOUR_VM_IP_ADDRESS with your Google Cloud VM's static IP address
+# Netlify Configuration for SteamBuddy Frontend (for manual drag-and-drop deployment)
+# This file gets copied to the dist folder and contains only redirects
 
 # Proxy all API requests to backend
 [[redirects]]
@@ -13,7 +13,3 @@
   from = "/*"
   to = "/index.html"
   status = 200
-
-[build]
-  publish = "dist"
-  command = "npm run build"
