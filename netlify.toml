@@ -1,0 +1,20 @@
+# Netlify Configuration for SteamBuddy Frontend
+# This file should be at the repository root when deploying via GitHub
+
+# Proxy all API requests to backend VM
+[[redirects]]
+  from = "/api/*"
+  to = "http://35.209.50.65/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback - all other routes go to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[build]
+  base = "frontend"
+  publish = "frontend/dist"
+  command = "npm run build"
