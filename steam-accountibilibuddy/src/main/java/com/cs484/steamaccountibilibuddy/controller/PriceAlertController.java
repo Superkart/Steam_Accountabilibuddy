@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @RestController
@@ -18,6 +21,8 @@ import java.util.stream.Collectors;
 public class PriceAlertController {
     private final PriceAlertService priceAlertService;
     private final PriceCheckScheduler priceCheckScheduler;
+    // In-memory map to track background job statuses. Key = jobId, Value = status string.
+    private final ConcurrentHashMap<String, String> backgroundJobStatuses = new ConcurrentHashMap<>();
 
     public PriceAlertController(PriceAlertService priceAlertService, PriceCheckScheduler priceCheckScheduler) {
         this.priceAlertService = priceAlertService;
@@ -152,18 +157,37 @@ public class PriceAlertController {
                     .body(Map.of("error", "Not authenticated"));
         }
 
-        try {
-            // Trigger manual price check synchronously
-            priceCheckScheduler.manualPriceCheck();
+        // Run the manual price check asynchronously to avoid blocking the HTTP thread.
+        String jobId = UUID.randomUUID().toString();
+        backgroundJobStatuses.put(jobId, "queued");
 
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Price check completed. Check your email if any alerts were triggered."
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to trigger price check: " + e.getMessage()));
+        CompletableFuture.runAsync(() -> {
+            backgroundJobStatuses.put(jobId, "running");
+            try {
+                priceCheckScheduler.manualPriceCheck();
+                backgroundJobStatuses.put(jobId, "completed");
+            } catch (Exception e) {
+                backgroundJobStatuses.put(jobId, "failed: " + e.getMessage());
+            }
+        });
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "jobId", jobId,
+                "message", "Price check started in background. Query /api/price-alerts/check-status/{jobId} for progress."
+        ));
+    }
+
+    /**
+     * Get status for an asynchronously started price-check job.
+     */
+    @GetMapping("/check-status/{jobId}")
+    public ResponseEntity<?> getCheckStatus(@PathVariable String jobId) {
+        String status = backgroundJobStatuses.get(jobId);
+        if (status == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Job not found"));
         }
+        return ResponseEntity.ok(Map.of("jobId", jobId, "status", status));
     }
 
     /**
