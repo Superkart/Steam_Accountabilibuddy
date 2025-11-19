@@ -1,7 +1,7 @@
 # Netlify Configuration for SteamBuddy Frontend
-# Replace YOUR_VM_IP_ADDRESS with your Google Cloud VM's static IP address
+# This file should be at the repository root when deploying via GitHub
 
-# Proxy all API requests to backend
+# Proxy all API requests to backend VM
 [[redirects]]
   from = "/api/*"
   to = "http://35.209.50.65/api/:splat"
@@ -15,5 +15,6 @@
   status = 200
 
 [build]
-  publish = "dist"
+  base = "frontend"
+  publish = "frontend/dist"
   command = "npm run build"
