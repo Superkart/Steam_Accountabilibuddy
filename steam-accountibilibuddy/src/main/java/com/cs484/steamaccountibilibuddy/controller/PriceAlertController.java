@@ -1,13 +1,5 @@
 package com.cs484.steamaccountibilibuddy.controller;
 
-import com.cs484.steamaccountibilibuddy.entity.PriceAlert;
-import com.cs484.steamaccountibilibuddy.scheduler.PriceCheckScheduler;
-import com.cs484.steamaccountibilibuddy.security.SecurityUtils;
-import com.cs484.steamaccountibilibuddy.service.PriceAlertService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -16,13 +8,50 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.cs484.steamaccountibilibuddy.entity.PriceAlert;
+import com.cs484.steamaccountibilibuddy.scheduler.PriceCheckScheduler;
+import com.cs484.steamaccountibilibuddy.security.SecurityUtils;
+import com.cs484.steamaccountibilibuddy.service.PriceAlertService;
+
 @RestController
 @RequestMapping("/api/price-alerts")
 public class PriceAlertController {
     private final PriceAlertService priceAlertService;
     private final PriceCheckScheduler priceCheckScheduler;
+
+    /*
+     * Tracks a background job's status and creation time for cleanup.
+     */
+    private static class JobStatus {
+        private final String status;
+        private final java.time.Instant createdAt;
+
+        public JobStatus(String status) {
+            this.status = status;
+            this.createdAt = java.time.Instant.now();
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public boolean isOlderThan(java.time.Duration duration) {
+            return createdAt.plus(duration).isBefore(java.time.Instant.now());
+        }
+    }
+
     // In-memory map to track background job statuses. Key = jobId, Value = status string.
-    private final ConcurrentHashMap<String, String> backgroundJobStatuses = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, JobStatus> backgroundJobStatuses = new ConcurrentHashMap<>();
 
     public PriceAlertController(PriceAlertService priceAlertService, PriceCheckScheduler priceCheckScheduler) {
         this.priceAlertService = priceAlertService;
@@ -159,22 +188,28 @@ public class PriceAlertController {
 
         // Run the manual price check asynchronously to avoid blocking the HTTP thread.
         String jobId = UUID.randomUUID().toString();
-        backgroundJobStatuses.put(jobId, "queued");
+        backgroundJobStatuses.put(jobId, new JobStatus("queued"));
 
         CompletableFuture.runAsync(() -> {
-            backgroundJobStatuses.put(jobId, "running");
+            backgroundJobStatuses.put(jobId, new JobStatus("running"));
             try {
                 priceCheckScheduler.manualPriceCheck();
-                backgroundJobStatuses.put(jobId, "completed");
+                backgroundJobStatuses.put(jobId, new JobStatus("completed"));
             } catch (Exception e) {
-                backgroundJobStatuses.put(jobId, "failed: " + e.getMessage());
+                backgroundJobStatuses.put(jobId, new JobStatus("failed: " + e.getMessage()));
             }
+        })
+        .orTimeout(5, java.util.concurrent.TimeUnit.MINUTES)
+        .exceptionally(ex -> {
+            backgroundJobStatuses.put(jobId, new JobStatus("failed: Operation time out after 5 minutes"));
+            System.err.println("Price check job " + jobId + "time out: " + ex.getMessage());
+            return null;
         });
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "jobId", jobId,
-                "message", "Price check started in background. Query /api/price-alerts/check-status/{jobId} for progress."
+                "message", "Checking prices now... If any games are below your target price, you'll receive an email."
         ));
     }
 
@@ -183,11 +218,11 @@ public class PriceAlertController {
      */
     @GetMapping("/check-status/{jobId}")
     public ResponseEntity<?> getCheckStatus(@PathVariable String jobId) {
-        String status = backgroundJobStatuses.get(jobId);
-        if (status == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Job not found"));
+        JobStatus jobStatus = backgroundJobStatuses.get(jobId);
+        if (jobStatus == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Job not found or expired"));
         }
-        return ResponseEntity.ok(Map.of("jobId", jobId, "status", status));
+        return ResponseEntity.ok(Map.of("jobId", jobId, "status", jobStatus.getStatus()));
     }
 
     /**
@@ -202,5 +237,28 @@ public class PriceAlertController {
         map.put("lastChecked", alert.getLastChecked() != null ? alert.getLastChecked().toString() : null);
         map.put("createdAt", alert.getCreatedAt().toString());
         return map;
+    }
+
+    /**
+     * Cleanup job that runs every hour to remove old job statuses.
+     * Prevents memory leaks from completed jobs that are never queried again.
+     */
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 3600000) // Every hour
+    public void cleanupOldJobStatuses() {
+        System.out.println("Running job cleanup... Current jobs in memory: " + backgroundJobStatuses.size());
+
+        java.time.Duration maxAge = java.time.Duration.ofHours(1); // Keep job statuses for 1 hour
+        int sizeBefore = backgroundJobStatuses.size();
+
+        backgroundJobStatuses.entrySet().removeIf(entry -> {
+            return entry.getValue().isOlderThan(maxAge);
+        });
+
+        int removed = sizeBefore - backgroundJobStatuses.size();
+        if (removed > 0) {
+            System.out.println("✓ Cleaned up " + removed + " old job statuses from memory. Remaining: " + backgroundJobStatuses.size());
+        } else {
+            System.out.println("✓ No old job statuses to clean up.");
+        }
     }
 }
