@@ -4,7 +4,7 @@
 # Proxy all API requests to backend
 [[redirects]]
   from = "/api/*"
-  to = "http://YOUR_VM_IP_ADDRESS/api/:splat"
+  to = "http://35.209.50.65/api/:splat"
   status = 200
   force = true
 
