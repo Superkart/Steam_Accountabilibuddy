@@ -36,7 +36,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
-@RequestMapping("/auth/steam")
+@RequestMapping("/api/auth/steam")
 public class SteamAuthController {
 
     @Value("${steam.openid.endpoint:https://steamcommunity.com/openid/login}")
@@ -68,7 +68,7 @@ public class SteamAuthController {
 
     @GetMapping("/login")
     public ResponseEntity<Void> login() {
-        String returnTo = baseUrl + "/auth/steam/return";
+        String returnTo = baseUrl + "/api/auth/steam/return";
 
         String redirect = UriComponentsBuilder
                 .fromUriString(steamOpenIdEndpoint)

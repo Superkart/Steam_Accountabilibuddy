@@ -12,14 +12,14 @@ const api = axios.create({
 export const authApi = {
   // Redirect to Steam login
   login: () => {
-    window.location.href = '/auth/steam/login';
+    window.location.href = '/api/auth/steam/login';
   },
 
   // Check if user is authenticated (can be called after Steam redirect)
   checkAuth: async (): Promise<AuthResponse | null> => {
     try {
       // Get current user info to verify session
-      const response = await api.get<AuthResponse>('/auth/steam/me');
+      const response = await api.get<AuthResponse>('/api/auth/steam/me');
       return response.data;
     } catch {
       return null; // Not authenticated
@@ -29,7 +29,7 @@ export const authApi = {
   // Get user's Steam library
   getLibrary: async (): Promise<Game[]> => {
     try {
-      const response = await api.get<Game[]>('/auth/steam/library');
+      const response = await api.get<Game[]>('/api/auth/steam/library');
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data?.error) {
@@ -42,7 +42,7 @@ export const authApi = {
   // Get user's Steam wishlist
   getWishlist: async (): Promise<WishlistEntry[]> => {
     try {
-      const response = await api.get<WishlistEntry[]>('/auth/steam/wishlist');
+      const response = await api.get<WishlistEntry[]>('/api/auth/steam/wishlist');
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data?.error) {
@@ -54,24 +54,24 @@ export const authApi = {
 
   // Logout user
   logout: async (): Promise<void> => {
-    await api.post('/auth/steam/logout');
+    await api.post('/api/auth/steam/logout');
   },
 
   // Get user profile (including email)
   getUserProfile: async (): Promise<{ steamId: string; email: string }> => {
-    const response = await api.get('/user/profile');
+    const response = await api.get('/api/user/profile');
     return response.data;
   },
 
   // Save user email
   saveEmail: async (email: string): Promise<void> => {
-    await api.post('/user/email', { email });
+    await api.post('/api/user/email', { email });
   },
 
   // Get all price alerts for the user
   getPriceAlerts: async (): Promise<PriceAlert[]> => {
     try {
-      const response = await api.get<{ alerts: PriceAlert[] }>('/price-alerts');
+      const response = await api.get<{ alerts: PriceAlert[] }>('/api/price-alerts');
       return response.data.alerts;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data?.error) {
@@ -84,7 +84,7 @@ export const authApi = {
   // Create or update a price alert
   createPriceAlert: async (appId: number, gameName: string, targetPrice: number): Promise<void> => {
     try {
-      await api.post('/price-alerts', { appId, gameName, targetPrice });
+      await api.post('/api/price-alerts', { appId, gameName, targetPrice });
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data?.error) {
         throw new Error(error.response.data.error);
@@ -96,7 +96,7 @@ export const authApi = {
   // Delete a price alert
   deletePriceAlert: async (appId: number): Promise<void> => {
     try {
-      await api.delete(`/price-alerts/${appId}`);
+      await api.delete(`/api/price-alerts/${appId}`);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data?.error) {
         throw new Error(error.response.data.error);
@@ -108,7 +108,7 @@ export const authApi = {
   // Delete all price alerts
   deleteAllPriceAlerts: async (): Promise<void> => {
     try {
-      await api.delete('/price-alerts');
+      await api.delete('/api/price-alerts');
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data?.error) {
         throw new Error(error.response.data.error);
@@ -120,12 +120,25 @@ export const authApi = {
   // Delete user email
   deleteEmail: async (): Promise<void> => {
     try {
-      await api.delete('/user/email');
+      await api.delete('/api/user/email');
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data?.error) {
         throw new Error(error.response.data.error);
       }
       throw new Error('Failed to delete email');
+    }
+  },
+
+  // Manually trigger price check (for demo/testing)
+  triggerPriceCheck: async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await api.post('/api/price-alerts/check-now');
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      throw new Error('Failed to trigger price check');
     }
   },
 };

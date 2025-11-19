@@ -1,0 +1,19 @@
+# Netlify Configuration for SteamBuddy Frontend
+# Replace YOUR_VM_IP_ADDRESS with your Google Cloud VM's static IP address
+
+# Proxy all API requests to backend
+[[redirects]]
+  from = "/api/*"
+  to = "http://YOUR_VM_IP_ADDRESS/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback - all other routes go to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[build]
+  publish = "dist"
+  command = "npm run build"

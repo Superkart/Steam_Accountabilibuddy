@@ -7,19 +7,7 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/auth': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
       '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/user': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/price-alerts': {
         target: 'http://localhost:8080',
         changeOrigin: true,
       }
