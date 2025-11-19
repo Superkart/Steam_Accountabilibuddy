@@ -7,6 +7,7 @@ import './EmailSettings.css';
 export const EmailSettings = () => {
   const { user, updateEmail, deleteEmail } = useAuth();
   const [email, setEmail] = useState('');
+  const [originalEmail, setOriginalEmail] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
@@ -18,6 +19,16 @@ export const EmailSettings = () => {
   useEffect(() => {
     loadPriceAlerts();
   }, [user]);
+
+  // Hydrate local email input whenever the authenticated user's email changes.
+  // This ensures returning users see their saved address in the input and
+  // lets us detect whether the field was actually modified (to avoid
+  // unnecessary saves/duplicate entries).
+  useEffect(() => {
+    const newEmail = user?.email ?? '';
+    setEmail(newEmail);
+    setOriginalEmail(newEmail);
+  }, [user?.email]);
 
   const loadPriceAlerts = async () => {
     try {
@@ -50,6 +61,9 @@ export const EmailSettings = () => {
       setIsSaving(true);
       setSaveMessage('');
       await updateEmail(email);
+      // Update originalEmail so the Save button stays disabled until the
+      // user changes the field again.
+      setOriginalEmail(email.trim());
       setSaveMessage('Email saved successfully!');
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
@@ -82,6 +96,7 @@ export const EmailSettings = () => {
       setSaveMessage('');
       await deleteEmail();
       setEmail('');
+      setOriginalEmail('');
       setPriceAlerts([]); // Clear price alerts since backend deletes them too
       setSaveMessage('Email and price alerts removed successfully!');
       setTimeout(() => setSaveMessage(''), 3000);
@@ -163,7 +178,10 @@ export const EmailSettings = () => {
           <button
             type="submit"
             className="save-button"
-            disabled={isSaving}
+            // Disable save while saving, when input is empty, or when value
+            // hasn't changed from the hydrated original value to avoid
+            // accidental duplicate saves.
+            disabled={isSaving || email.trim() === '' || email.trim() === (originalEmail ?? '').trim()}
           >
             {isSaving ? 'Saving...' : 'Save Email'}
           </button>

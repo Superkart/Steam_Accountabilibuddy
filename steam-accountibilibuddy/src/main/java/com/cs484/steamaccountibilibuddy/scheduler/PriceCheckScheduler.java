@@ -92,13 +92,22 @@ public class PriceCheckScheduler {
             System.out.println("Successfully fetched " + allPrices.size() + " prices");
 
             // Step 1: Update all alerts with current prices
+            java.util.List<Integer> skippedIds = new java.util.ArrayList<>();
             for (PriceAlert alert : allAlerts) {
                 PriceInfo currentPrice = allPrices.get(alert.getAppId());
-                if (currentPrice.getCurrentPrice() != null) {
-                    pricesChecked++;
-                    // Update alert with current price (also resets notification if price went above target)
-                    priceAlertService.updateAlertPrice(alert, currentPrice.getCurrentPrice());
+                if (currentPrice == null || currentPrice.getCurrentPrice() == null) {
+                    // Steam failed to return price info for this appId — skip and record
+                    skippedIds.add(alert.getAppId());
+                    continue;
                 }
+
+                pricesChecked++;
+                // Update alert with current price (also resets notification if price went above target)
+                priceAlertService.updateAlertPrice(alert, currentPrice.getCurrentPrice());
+            }
+
+            if (!skippedIds.isEmpty()) {
+                System.out.println("Skipped updating currentPrice for appIds (no data): " + skippedIds);
             }
 
             // Step 2: Group alerts by user for batched notifications
@@ -107,8 +116,8 @@ public class PriceCheckScheduler {
             for (PriceAlert alert : allAlerts) {
                 PriceInfo currentPrice = allPrices.get(alert.getAppId());
 
-                // Check if price is below target AND we haven't notified yet
-                if (currentPrice != null &&
+                // Only consider alerts with valid price data
+                if (currentPrice != null && currentPrice.getCurrentPrice() != null &&
                     currentPrice.getCurrentPrice().compareTo(alert.getTargetPrice()) < 0 &&
                     alert.getLastNotificationSent() == null) {
 
