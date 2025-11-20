@@ -221,6 +221,14 @@ export const EmailSettings = () => {
                   {isCheckingPrices ? 'Checking...' : '📧 Test Email System'}
                 </button>
                 <button
+                  onClick={loadPriceAlerts}
+                  className="refresh-button"
+                  disabled={loadingAlerts}
+                  title="Refresh last-checked timestamps"
+                >
+                  {loadingAlerts ? 'Refreshing...' : 'Refresh'}
+                </button>
+                <button
                   onClick={handleDeleteAllAlerts}
                   className="delete-all-button"
                   disabled={isDeleting}
