@@ -41,6 +41,7 @@ public class PriceCheckScheduler {
      * Cron expression: "0 0 9 * * ?" means: second=0, minute=0, hour=9, every day
      */
     @Scheduled(cron = "0 0 9 * * ?")
+    @org.springframework.transaction.annotation.Transactional
     @SuppressWarnings("BusyWait") // Thread.sleep is intentional for API rate limiting
     public void checkPriceAlerts() {
         System.out.println("Starting daily price check job...");
