@@ -75,6 +75,43 @@
   margin: 0;
 }
 
+.steam-id-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.steam-id-label {
+  color: #8f98a0;
+  font-size: 13px;
+}
+
+.steam-id {
+  color: #67c1f5;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.steam-id-controls {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.small-button {
+  background: rgba(103, 193, 245, 0.08);
+  border: 1px solid rgba(103, 193, 245, 0.18);
+  color: #67c1f5;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.small-button:hover {
+  background: rgba(103, 193, 245, 0.12);
+}
+
 .user-email {
   color: #67c1f5 !important;
 }
