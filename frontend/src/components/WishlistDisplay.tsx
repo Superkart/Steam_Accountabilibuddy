@@ -166,6 +166,11 @@ export const WishlistDisplay = () => {
   const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
   const [recommendations, setRecommendations] = useState<BacklogRecommendation[]>([]);
   const [expandedRecommendationId, setExpandedRecommendationId] = useState<number | null>(null);
+  // Share modal state
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
 
   const loadPriceAlerts = useCallback(async () => {
     try {
@@ -434,6 +439,30 @@ export const WishlistDisplay = () => {
         <h2>Your Wishlist</h2>
         <div className="header-controls">
           <span className="game-count">{wishlist.length} items</span>
+          <button
+            className="share-wishlist-button"
+            onClick={async () => {
+              setSharing(true);
+              setShareError(null);
+              try {
+                const resp = await authApi.createShareLink();
+                setGeneratedLink(resp.shareUrl);
+                setShareModalVisible(true);
+                try {
+                  await navigator.clipboard.writeText(resp.shareUrl);
+                } catch {
+                  // ignore clipboard failures
+                }
+              } catch (err) {
+                setShareError(err instanceof Error ? err.message : 'Failed to create share link');
+              } finally {
+                setSharing(false);
+              }
+            }}
+            disabled={sharing}
+          >
+            {sharing ? 'Sharing...' : 'Share Wishlist'}
+          </button>
           <div className="sort-controls">
             <label htmlFor="sort-select" className="sort-label">Sort by:</label>
             <select
@@ -450,6 +479,34 @@ export const WishlistDisplay = () => {
           </div>
         </div>
       </div>
+      {/* Share modal */}
+      {shareModalVisible && (
+        <div className="share-modal-overlay">
+          <div className="share-modal">
+            <h3>Share Your Wishlist</h3>
+            {shareError && <div className="error-message">{shareError}</div>}
+            <p>Anyone with this link can view a snapshot of your wishlist.</p>
+            <input
+              className="share-link-input"
+              readOnly
+              value={generatedLink ?? ''}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).select()}
+            />
+            <div className="share-modal-actions">
+              <button
+                onClick={() => {
+                  if (generatedLink) {
+                    navigator.clipboard.writeText(generatedLink).catch(() => {});
+                  }
+                }}
+              >
+                Copy Link
+              </button>
+              <button onClick={() => setShareModalVisible(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="wishlist-list">
         {getSortedWishlist().map((game) => (
           <div key={game.appId}>
