@@ -296,6 +296,8 @@ export const WishlistDisplay = () => {
     }
   };
 
+  const playNext = recommendations.length > 0 ? recommendations[0] : null;
+
   if (loading) {
     return (
       <div className="wishlist-container">
@@ -344,6 +346,71 @@ export const WishlistDisplay = () => {
 
   return (
     <div className="wishlist-container">
+      {playNext && (
+        <div className="play-next-card">
+          <div className="play-next-header">
+            <div>
+              <h3>Play Next</h3>
+              <p>Suggested from your backlog based on your wishlist.</p>
+            </div>
+            {playNext.game.playtimeHours !== undefined && (
+              <span className="play-next-playtime">
+                {playNext.game.playtimeHours.toFixed(1)} hrs played
+              </span>
+            )}
+          </div>
+          <div className="play-next-main">
+            <div className="play-next-left">
+              {playNext.game.appId && (
+                <img
+                  src={`https://cdn.akamai.steamstatic.com/steam/apps/${playNext.game.appId}/header.jpg`}
+                  alt={playNext.game.name}
+                  className="play-next-img"
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="292" height="136"%3E%3Crect fill="%231b2838" width="292" height="136"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+                  }}
+                />
+              )}
+            </div>
+            <div className="play-next-content">
+              <h4 className="play-next-title">{playNext.game.name}</h4>
+              {playNext.game.tags && playNext.game.tags.length > 0 && (
+                <div className="play-next-tags">
+                  {playNext.game.tags.slice(0, 6).map((tag, idx) => (
+                    <span key={idx} className="tag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {playNext.matches.length > 0 && (
+                <div className="play-next-matches">
+                  <span className="play-next-match-title">Because you wishlist:</span>
+                  <span className="play-next-match-names">
+                    {playNext.matches
+                      .slice(0, 3)
+                      .map((match) => match.entry.name)
+                      .join(', ')}
+                    {playNext.matches.length > 3 ? '…' : ''}
+                  </span>
+                </div>
+              )}
+              {playNext.game.appId && (
+                <a
+                  href={`https://store.steampowered.com/app/${playNext.game.appId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="play-next-steam-link"
+                >
+                  Open in Steam Store
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {recommendations.length > 0 && (
         <div className="backlog-recommendations">
           <div className="backlog-header">
@@ -361,7 +428,8 @@ export const WishlistDisplay = () => {
                         alt={recommendation.game.name}
                         className="backlog-card-img"
                         onError={(e) => {
-                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="292" height="136"%3E%3Crect fill="%231b2838" width="292" height="136"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+                          e.currentTarget.src =
+                            'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="292" height="136"%3E%3Crect fill="%231b2838" width="292" height="136"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
                         }}
                       />
                     )}
@@ -371,7 +439,8 @@ export const WishlistDisplay = () => {
                       <div>
                         <h4>{recommendation.game.name}</h4>
                         <span className="backlog-match-count">
-                          Matches {recommendation.matches.length} wishlist game{recommendation.matches.length > 1 ? 's' : ''}
+                          Matches {recommendation.matches.length} wishlist game
+                          {recommendation.matches.length > 1 ? 's' : ''}
                         </span>
                       </div>
                       {recommendation.game.playtimeHours !== undefined && (
@@ -393,16 +462,13 @@ export const WishlistDisplay = () => {
                       className="matching-wishlist-button"
                       onClick={() => toggleRecommendation(recommendation.game.appId!)}
                     >
-                      {expandedRecommendationId === recommendation.game.appId
-                        ? 'Hide'
-                        : 'Show'}{' '}
-                      Matching Wishlist Games
+                      {expandedRecommendationId === recommendation.game.appId ? 'Hide' : 'Show'} Matching Wishlist Games
                     </button>
                   </div>
                 </div>
                 {expandedRecommendationId === recommendation.game.appId && (
                   <div className="matching-wishlist-container">
-                    {recommendation.matches.map(match => (
+                    {recommendation.matches.map((match) => (
                       <div key={match.entry.appId} className="matching-wishlist-item">
                         <div className="matching-wishlist-info">
                           <div className="matching-wishlist-title">
@@ -418,7 +484,7 @@ export const WishlistDisplay = () => {
                           gameName={match.entry.name}
                           currentPrice={match.entry.currentPrice}
                           originalPrice={match.entry.originalPrice}
-                          hasAlert={priceAlerts.some(alert => alert.appId === match.entry.appId)}
+                          hasAlert={priceAlerts.some((alert) => alert.appId === match.entry.appId)}
                           onAlertChange={loadPriceAlerts}
                         />
                       </div>
