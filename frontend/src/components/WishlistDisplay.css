@@ -448,6 +448,26 @@
   align-items: stretch;
 }
 
+/* Buy Now Button */
+.buy-now-button {
+  background: linear-gradient(to bottom, #1e90ff 0%, #1872cc 100%);
+  color: white;
+  border: 1px solid #0d47a1;
+  padding: 8px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-top: 5px;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.buy-now-button:hover {
+  background: linear-gradient(to bottom, #3b9eff 0%, #1e5aa8 100%);
+  border-color: #0052cc;
+}
+
 /* Similar Games Button */
 .similar-games-button {
   background: rgba(103, 193, 245, 0.2);

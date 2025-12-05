@@ -578,6 +578,16 @@ export const WishlistDisplay = () => {
                     onAlertChange={loadPriceAlerts}
                   />
                   <button
+                    className="buy-now-button"
+                    onClick={() => {
+                      if (game.appId) {
+                        window.open(`https://store.steampowered.com/app/${game.appId}/`, '_blank');
+                      }
+                    }}
+                  >
+                    🛒 Buy Now
+                  </button>
+                  <button
                     className="similar-games-button"
                     onClick={() => toggleSimilarGames(game.appId)}
                   >
