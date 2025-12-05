@@ -28,6 +28,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Allow public access to Steam auth endpoints
                 .requestMatchers("/api/auth/steam/login", "/api/auth/steam/return").permitAll()
+                // Allow public access to share endpoints (public snapshots)
+                .requestMatchers("/api/share/**").permitAll()
                 // Allow public access to error endpoints
                 .requestMatchers("/error").permitAll()
                 // Require authentication for all other endpoints

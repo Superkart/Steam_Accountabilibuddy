@@ -448,6 +448,26 @@
   align-items: stretch;
 }
 
+/* Buy Now Button */
+.buy-now-button {
+  background: linear-gradient(to bottom, #1e90ff 0%, #1872cc 100%);
+  color: white;
+  border: 1px solid #0d47a1;
+  padding: 8px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-top: 5px;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.buy-now-button:hover {
+  background: linear-gradient(to bottom, #3b9eff 0%, #1e5aa8 100%);
+  border-color: #0052cc;
+}
+
 /* Similar Games Button */
 .similar-games-button {
   background: rgba(103, 193, 245, 0.2);
@@ -591,6 +611,245 @@
     flex-direction: column;
     align-items: flex-start;
   }
+
+}
+
+/* Share Wishlist Button */
+.share-wishlist-button {
+  background: linear-gradient(to bottom, #beee11 5%, #a8d914 95%);
+  color: #1b2838;
+  border: 1px solid #8ab414;
+  padding: 8px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: all 0.3s;
+  outline: none;
+}
+
+.share-wishlist-button:hover {
+  background: linear-gradient(to bottom, #d4f545 5%, #beee11 95%);
+  border-color: #a8d914;
+  transform: translateY(-1px);
+}
+
+.share-wishlist-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Share Modal Overlay */
+.share-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Share Modal */
+.share-modal {
+  background: linear-gradient(to bottom, rgba(27, 40, 56, 0.95) 0%, rgba(20, 30, 42, 0.95) 100%);
+  border: 1px solid rgba(103, 193, 245, 0.4);
+  border-radius: 4px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.share-modal h3 {
+  color: #beee11;
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.share-modal p {
+  color: #8f98a0;
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.share-modal .error-message {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid #ff6b6b;
+  color: #ff9999;
+  padding: 12px;
+  border-radius: 2px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+/* Share Link Input */
+.share-link-input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(103, 193, 245, 0.5);
+  color: #beee11;
+  border-radius: 2px;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+  margin-bottom: 16px;
+  transition: border-color 0.3s;
+}
+
+.share-link-input:focus {
+  outline: none;
+  border-color: #67c1f5;
+  box-shadow: 0 0 0 2px rgba(103, 193, 245, 0.2);
+}
+
+.share-link-input:hover {
+  border-color: #67c1f5;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Share Modal Actions */
+.share-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.share-modal-actions button {
+  padding: 10px 20px;
+  border-radius: 2px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: all 0.3s;
+  outline: none;
+}
+
+.share-modal-actions button:first-child {
+  background: linear-gradient(to bottom, #1e90ff 0%, #1872cc 100%);
+  color: white;
+  border: 1px solid #0d47a1;
+}
+
+.share-modal-actions button:first-child:hover {
+  background: linear-gradient(to bottom, #3b9eff 0%, #1e5aa8 100%);
+  transform: translateY(-1px);
+}
+
+.share-modal-actions button:last-child {
+  background: rgba(103, 193, 245, 0.1);
+  color: #67c1f5;
+  border: 1px solid rgba(103, 193, 245, 0.5);
+}
+
+.share-modal-actions button:last-child:hover {
+  background: rgba(103, 193, 245, 0.2);
+  border-color: #67c1f5;
+}
+
+/* Shared Wishlist Page */
+.shared-wishlist-page {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 20px;
+  background: linear-gradient(to bottom, rgba(27, 40, 56, 0.4) 0%, rgba(27, 40, 56, 0) 100%);
+}
+
+.shared-wishlist-page h2 {
+  color: #beee11;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.shared-wishlist-page p {
+  color: #8f98a0;
+  font-size: 12px;
+  margin: 0 0 20px 0;
+}
+
+.wishlist-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.shared-game-card {
+  background: linear-gradient(to bottom, rgba(27, 40, 56, 0.6) 0%, rgba(20, 30, 42, 0.6) 100%);
+  border: 1px solid rgba(103, 193, 245, 0.2);
+  border-radius: 2px;
+  padding: 16px;
+  transition: all 0.3s;
+}
+
+.shared-game-card:hover {
+  border-color: rgba(103, 193, 245, 0.5);
+  background: linear-gradient(to bottom, rgba(27, 40, 56, 0.8) 0%, rgba(20, 30, 42, 0.8) 100%);
+}
+
+.shared-game-card h3 {
+  color: white;
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shared-game-card p {
+  color: #beee11;
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shared-game-card .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.shared-game-card .tag {
+  background: rgba(103, 193, 245, 0.15);
+  color: #67c1f5;
+  border: 1px solid rgba(103, 193, 245, 0.3);
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-size: 10px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.shared-game-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 4px 4px 0 0;
+  margin: -8px -8px 8px -8px;
+}
 
   .game-capsule {
     width: 100%;

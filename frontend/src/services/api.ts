@@ -141,6 +141,17 @@ export const authApi = {
       throw new Error('Failed to trigger price check');
     }
   },
+  // Create a public share link for the user's wishlist
+  createShareLink: async (): Promise<{ uuid: string; shareUrl: string }> => {
+    const response = await api.post('/api/share/wishlist');
+    return response.data;
+  },
+
+  // Get Steam store URL for a game
+  getBuyNowUrl: async (appId: number): Promise<{ storeUrl: string }> => {
+    const response = await api.get(`/api/wishlist/buy-now/${appId}`);
+    return response.data;
+  },
 };
 
 export default api;
