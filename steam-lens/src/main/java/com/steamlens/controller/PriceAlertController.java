@@ -8,6 +8,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,6 +28,7 @@ import com.steamlens.service.PriceAlertService;
 @RestController
 @RequestMapping("/api/price-alerts")
 public class PriceAlertController {
+    private static final Logger logger = LoggerFactory.getLogger(PriceAlertController.class);
     private final PriceAlertService priceAlertService;
     private final PriceCheckScheduler priceCheckScheduler;
 
@@ -201,8 +204,8 @@ public class PriceAlertController {
         })
         .orTimeout(5, java.util.concurrent.TimeUnit.MINUTES)
         .exceptionally(ex -> {
-            backgroundJobStatuses.put(jobId, new JobStatus("failed: Operation time out after 5 minutes"));
-            System.err.println("Price check job " + jobId + "time out: " + ex.getMessage());
+            backgroundJobStatuses.put(jobId, new JobStatus("failed: Operation timed out after 5 minutes"));
+            logger.error("Price check job {} timed out: {}", jobId, ex.getMessage());
             return null;
         });
 
@@ -245,20 +248,14 @@ public class PriceAlertController {
      */
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 3600000) // Every hour
     public void cleanupOldJobStatuses() {
-        System.out.println("Running job cleanup... Current jobs in memory: " + backgroundJobStatuses.size());
-
-        java.time.Duration maxAge = java.time.Duration.ofHours(1); // Keep job statuses for 1 hour
+        java.time.Duration maxAge = java.time.Duration.ofHours(1);
         int sizeBefore = backgroundJobStatuses.size();
 
-        backgroundJobStatuses.entrySet().removeIf(entry -> {
-            return entry.getValue().isOlderThan(maxAge);
-        });
+        backgroundJobStatuses.entrySet().removeIf(entry -> entry.getValue().isOlderThan(maxAge));
 
         int removed = sizeBefore - backgroundJobStatuses.size();
         if (removed > 0) {
-            System.out.println("✓ Cleaned up " + removed + " old job statuses from memory. Remaining: " + backgroundJobStatuses.size());
-        } else {
-            System.out.println("✓ No old job statuses to clean up.");
+            logger.debug("Cleaned up {} old job statuses. Remaining: {}", removed, backgroundJobStatuses.size());
         }
     }
 }

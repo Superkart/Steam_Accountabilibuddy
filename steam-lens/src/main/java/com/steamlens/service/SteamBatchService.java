@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -20,6 +22,7 @@ import com.steamlens.dto.PriceInfo;
  */
 @Service
 public class SteamBatchService {
+    private static final Logger logger = LoggerFactory.getLogger(SteamBatchService.class);
     private final WebClient webClient;
 
     public SteamBatchService(WebClient webClient) {
@@ -114,7 +117,6 @@ public class SteamBatchService {
                     }
 
                     if (currentPrice != null) {
-                        //System.out.println("AppId " + appId + ": currentPrice=" + currentPrice + ", originalPrice=" + originalPrice + ", discountPercent=" + discountPercent);
                         priceMap.put(appId, new PriceInfo(currentPrice, originalPrice, discountPercent));
                     }
                 }
@@ -123,7 +125,7 @@ public class SteamBatchService {
             return priceMap;
 
         } catch (org.springframework.web.reactive.function.client.WebClientException | java.io.IOException e) {
-            System.err.println("Batch price fetch failed: " + e.getMessage());
+            logger.error("Batch price fetch failed: {}", e.getMessage(), e);
             return Collections.emptyMap();
         }
     }
@@ -163,7 +165,7 @@ public class SteamBatchService {
 
             return objectMapper.writeValueAsString(request);
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            System.err.println("Failed to build JSON request: " + e.getMessage());
+            logger.error("Failed to build JSON request: {}", e.getMessage(), e);
             return "{}";
         }
     }

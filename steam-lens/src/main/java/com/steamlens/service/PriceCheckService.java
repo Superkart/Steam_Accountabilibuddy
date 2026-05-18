@@ -1,5 +1,7 @@
 package com.steamlens.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -9,6 +11,7 @@ import java.util.Map;
 
 @Service
 public class PriceCheckService {
+    private static final Logger logger = LoggerFactory.getLogger(PriceCheckService.class);
     private final WebClient webClient;
 
     public PriceCheckService(WebClient webClient) {
@@ -64,8 +67,7 @@ public class PriceCheckService {
             return new BigDecimal(priceInCents).divide(new BigDecimal(100));
 
         } catch (Exception e) {
-            // Log error and return null if fetching fails
-            System.err.println("Error fetching price for appId " + appId + ": " + e.getMessage());
+            logger.error("Error fetching price for appId {}: {}", appId, e.getMessage(), e);
             return null;
         }
     }
@@ -108,7 +110,7 @@ public class PriceCheckService {
             return discountPercent != null && ((Number) discountPercent).intValue() > 0;
 
         } catch (Exception e) {
-            System.err.println("Error checking sale status for appId " + appId + ": " + e.getMessage());
+            logger.error("Error checking sale status for appId {}: {}", appId, e.getMessage(), e);
             return false;
         }
     }

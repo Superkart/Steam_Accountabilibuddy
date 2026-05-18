@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +22,7 @@ import com.steamlens.service.UserService;
 
 @Component
 public class PriceCheckScheduler {
+    private static final Logger logger = LoggerFactory.getLogger(PriceCheckScheduler.class);
     private final PriceAlertService priceAlertService;
     private final SteamBatchService steamBatchService;
     private final EmailService emailService;
@@ -44,13 +47,13 @@ public class PriceCheckScheduler {
     @org.springframework.transaction.annotation.Transactional
     @SuppressWarnings("BusyWait") // Thread.sleep is intentional for API rate limiting
     public void checkPriceAlerts() {
-        System.out.println("Starting daily price check job...");
+        logger.info("Starting daily price check job...");
 
         List<PriceAlert> allAlerts = priceAlertService.getAllAlerts();
-        System.out.println("Found " + allAlerts.size() + " price alerts to check");
+        logger.info("Found {} price alerts to check", allAlerts.size());
 
         if (allAlerts.isEmpty()) {
-            System.out.println("No price alerts to check.");
+            logger.info("No price alerts to check");
             return;
         }
 
@@ -64,7 +67,7 @@ public class PriceCheckScheduler {
                     .distinct()
                     .collect(Collectors.toList());
 
-            System.out.println("Fetching prices for " + appIds.size() + " unique games using batch API...");
+            logger.info("Fetching prices for {} unique games using batch API", appIds.size());
 
             // Split into batches of 500 to avoid overwhelming the API
             int batchSize = 500;
@@ -74,7 +77,7 @@ public class PriceCheckScheduler {
                 int end = Math.min(i + batchSize, appIds.size());
                 List<Integer> batch = appIds.subList(i, end);
 
-                System.out.println("Fetching batch " + (i / batchSize + 1) + " (" + batch.size() + " games)...");
+                logger.debug("Fetching batch {} ({} games)", i / batchSize + 1, batch.size());
                 Map<Integer, PriceInfo> batchPrices = steamBatchService.batchGetPrices(batch, "US");
                 allPrices.putAll(batchPrices);
 
@@ -84,13 +87,13 @@ public class PriceCheckScheduler {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        System.err.println("Price check interrupted during batch delay: " + e.getMessage());
+                        logger.warn("Price check interrupted during batch delay", e);
                         break;
                     }
                 }
             }
 
-            System.out.println("Successfully fetched " + allPrices.size() + " prices");
+            logger.info("Successfully fetched {} prices", allPrices.size());
 
             // Step 1: Update all alerts with current prices
             java.util.List<Integer> skippedIds = new java.util.ArrayList<>();
@@ -108,7 +111,7 @@ public class PriceCheckScheduler {
             }
 
             if (!skippedIds.isEmpty()) {
-                System.out.println("Skipped updating currentPrice for appIds (no data): " + skippedIds);
+                logger.warn("Skipped updating currentPrice for appIds (no data): {}", skippedIds);
             }
 
             // Step 2: Group alerts by user for batched notifications
@@ -149,19 +152,19 @@ public class PriceCheckScheduler {
                             }
 
                             emailsSent++;
-                            System.out.println("Sent batched notification to " + user.getEmail() + " for " + userAlerts.size() + " games");
+                            logger.info("Sent batched notification to {} for {} games", user.getEmail(), userAlerts.size());
                         }
                     }
                 } catch (Exception e) {
-                    System.err.println("Error sending batched notification for user " + steamId + ": " + e.getMessage());
+                    logger.error("Error sending batched notification for user {}: {}", steamId, e.getMessage(), e);
                 }
             }
 
         } catch (Exception e) {
-            System.err.println("Error during batch price check: " + e.getMessage());
+            logger.error("Error during batch price check", e);
         }
 
-        System.out.println("Price check job completed. Checked " + pricesChecked + " prices, sent " + emailsSent + " batched notifications to users.");
+        logger.info("Price check job completed. Checked {} prices, sent {} batched notifications.", pricesChecked, emailsSent);
     }
 
     /**
@@ -169,7 +172,7 @@ public class PriceCheckScheduler {
      */
     @org.springframework.transaction.annotation.Transactional
     public void manualPriceCheck() {
-        System.out.println("Manual price check triggered");
+        logger.info("Manual price check triggered");
         checkPriceAlerts();
     }
 }

@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.steamlens.dto.PriceInfo;
 import com.steamlens.dto.SteamOpenidLoginDTO;
 import com.steamlens.dto.SteamProfileDto;
 import com.steamlens.security.SteamAuthenticationToken;
@@ -52,17 +51,14 @@ public class SteamAuthController {
     private final WebClient webClient;
     private final SteamService steamService;
     private final UserService userService;
-    private final com.steamlens.service.SteamBatchService steamBatchService;
     private final com.steamlens.service.GameService gameService;
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     public SteamAuthController(WebClient webClient, SteamService steamService, UserService userService,
-                               com.steamlens.service.SteamBatchService steamBatchService,
                                com.steamlens.service.GameService gameService) {
         this.webClient = webClient;
         this.steamService = steamService;
         this.userService = userService;
-        this.steamBatchService = steamBatchService;
         this.gameService = gameService;
     }
 
@@ -264,58 +260,4 @@ public class SteamAuthController {
         }
     }
 
-    /**
-     * EXPERIMENTAL: Test endpoint for batch price fetching using real wishlist data.
-     * Fetches your wishlist and tests the batch API with those app IDs.
-     * Test with: GET /auth/steam/test-batch (requires authentication)
-     */
-    @GetMapping("/test-batch")
-    public ResponseEntity<?> testBatchApi() {
-        String steamId = com.steamlens.security.SecurityUtils.getCurrentSteamId();
-        if (steamId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Not authenticated. Please login via /auth/steam/login first."));
-        }
-
-        try {
-            // Fetch wishlist to get real app IDs
-            System.out.println("Fetching wishlist for steamId: " + steamId);
-            List<com.steamlens.dto.WishlistEntryDto> wishlist =
-                    steamService.getWishlist(steamId);
-
-            if (wishlist.isEmpty()) {
-                return ResponseEntity.ok(Map.of(
-                    "message", "Your wishlist is empty. Add some games to test the batch API.",
-                    "wishlistSize", 0
-                ));
-            }
-
-            // Extract app IDs (limit to first 10 for testing)
-            List<Integer> appIdList = wishlist.stream()
-                    .limit(10)
-                    .map(com.steamlens.dto.WishlistEntryDto::getAppId)
-                    .filter(id -> id != null)
-                    .toList();
-
-            System.out.println("Testing batch API with " + appIdList.size() + " games from your wishlist");
-
-            // Use the batch API to fetch prices
-            java.util.Map<Integer, PriceInfo> prices = steamBatchService.batchGetPrices(appIdList, "US");
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "Batch API test complete! Check console for details.",
-                    "wishlistSize", wishlist.size(),
-                    "testedAppIds", appIdList,
-                    "pricesFetched", prices.size(),
-                    "prices", prices
-            ));
-        } catch (com.steamlens.exception.PrivateProfileException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Wishlist is private: " + e.getMessage()));
-        } catch (Exception e) {
-            System.err.println("Error testing batch API: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
 }

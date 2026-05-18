@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import com.steamlens.exception.PrivateProfileException;
 
 @Service
 public class SteamService {
+    private static final Logger logger = LoggerFactory.getLogger(SteamService.class);
     private final WebClient webClient;
     private final GameService gameService;
     private final SteamBatchService steamBatchService;
@@ -275,12 +278,12 @@ public class SteamService {
             GameDetailsDto cached = cachedGame.get();
             // Re-fetch if tags are empty or null (was cached before tags were properly fetched)
             if (cached.getTags() != null && !cached.getTags().isEmpty()) {
-                System.out.println("Cache HIT for appId " + appId);
+                logger.debug("Cache HIT for appId {}", appId);
                 return cached;
             }
-            System.out.println("Cache HIT for appId " + appId + " but tags empty - re-fetching");
+            logger.debug("Cache HIT for appId {} but tags empty - re-fetching", appId);
         } else {
-            System.out.println("Cache MISS for appId " + appId + " - fetching from Steam API");
+            logger.debug("Cache MISS for appId {} - fetching from Steam API", appId);
         }
 
         // Not in cache, fetch from Steam API
@@ -304,7 +307,7 @@ public class SteamService {
 
             Map<String, Object> data = (Map<String, Object>) appData.get("data");
             if (data == null) {
-                System.out.println("WARNING: AppId " + appId + " has no data from Steam Store API (unreleased or removed game)");
+                logger.warn("AppId {} has no data from Steam Store API (unreleased or removed game)", appId);
                 return null;
             }
 
@@ -312,16 +315,15 @@ public class SteamService {
 
             // Don't cache games without a name - they might be unreleased/not yet in store
             if (name == null || name.isBlank()) {
-                System.out.println("WARNING: AppId " + appId + " has no name from Steam Store API (likely unreleased game)");
+                logger.warn("AppId {} has no name from Steam Store API (likely unreleased game)", appId);
                 return null;
             }
 
             // Fetch community tags from SteamSpy API
             List<String> tags = fetchCommunityTagsFromSteamSpy(appId);
 
-            // Debug logging for games with no tags
             if (tags.isEmpty()) {
-                System.out.println("WARNING: AppId " + appId + " (" + name + ") has no community tags from SteamSpy");
+                logger.warn("AppId {} ({}) has no community tags from SteamSpy", appId, name);
             }
 
             GameDetailsDto gameDetails = new GameDetailsDto(name, tags);
@@ -338,8 +340,7 @@ public class SteamService {
 
             return gameDetails;
         } catch (Exception e) {
-            // Log error and return null if fetching fails
-            System.err.println("Error fetching game details for appId " + appId + ": " + e.getMessage());
+            logger.error("Error fetching game details for appId {}: {}", appId, e.getMessage(), e);
             return null;
         }
     }
@@ -384,7 +385,7 @@ public class SteamService {
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            System.err.println("Error fetching SteamSpy tags for appId " + appId + ": " + e.getMessage());
+            logger.error("Error fetching SteamSpy tags for appId {}: {}", appId, e.getMessage(), e);
             return Collections.emptyList();
         }
     }
@@ -425,7 +426,7 @@ public class SteamService {
 
             return new SteamProfileDto(steamId, username, avatarFull);
         } catch (Exception e) {
-            System.err.println("Error fetching player profile for steamId " + steamId + ": " + e.getMessage());
+            logger.error("Error fetching player profile for steamId {}: {}", steamId, e.getMessage(), e);
             return null;
         }
     }

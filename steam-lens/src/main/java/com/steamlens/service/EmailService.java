@@ -1,6 +1,8 @@
 package com.steamlens.service;
 
 import com.steamlens.entity.PriceAlert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -11,6 +13,7 @@ import java.util.Map;
 
 @Service
 public class EmailService {
+    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
     private final JavaMailSender mailSender;
 
     @Value("${spring.mail.username}")
@@ -30,7 +33,7 @@ public class EmailService {
      */
     public void sendPriceDropNotification(String toEmail, PriceAlert alert, BigDecimal currentPrice, String username) {
         if (toEmail == null || toEmail.isBlank()) {
-            System.err.println("Cannot send email: recipient email is blank");
+            logger.warn("Cannot send price drop email: recipient email is blank");
             return;
         }
 
@@ -60,10 +63,10 @@ public class EmailService {
             message.setText(body);
 
             mailSender.send(message);
-            System.out.println("Price drop email sent to " + toEmail + " for game " + alert.getGameName());
+            logger.info("Price drop email sent to {} for game {}", toEmail, alert.getGameName());
 
         } catch (org.springframework.mail.MailException e) {
-            System.err.println("Failed to send email to " + toEmail + ": " + e.getMessage());
+            logger.error("Failed to send price drop email to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 
@@ -88,12 +91,12 @@ public class EmailService {
      */
     public void sendBatchedPriceDropNotification(String toEmail, Map<PriceAlert, BigDecimal> alertsWithPrices, String username) {
         if (toEmail == null || toEmail.isBlank()) {
-            System.err.println("Cannot send email: recipient email is blank");
+            logger.warn("Cannot send batched price drop email: recipient email is blank");
             return;
         }
 
         if (alertsWithPrices == null || alertsWithPrices.isEmpty()) {
-            System.err.println("Cannot send email: no alerts provided");
+            logger.warn("Cannot send batched price drop email: no alerts provided");
             return;
         }
 
@@ -145,10 +148,10 @@ public class EmailService {
             message.setText(body.toString());
 
             mailSender.send(message);
-            System.out.println("Batched price drop email sent to " + toEmail + " for " + gameCount + " games");
+            logger.info("Batched price drop email sent to {} for {} games", toEmail, gameCount);
 
         } catch (org.springframework.mail.MailException e) {
-            System.err.println("Failed to send batched email to " + toEmail + ": " + e.getMessage());
+            logger.error("Failed to send batched email to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 
@@ -166,10 +169,10 @@ public class EmailService {
             message.setText("This is a test email to confirm your email settings are working correctly.");
 
             mailSender.send(message);
-            System.out.println("Test email sent to " + toEmail);
+            logger.info("Test email sent to {}", toEmail);
 
         } catch (org.springframework.mail.MailException e) {
-            System.err.println("Failed to send test email to " + toEmail + ": " + e.getMessage());
+            logger.error("Failed to send test email to {}: {}", toEmail, e.getMessage(), e);
             throw new RuntimeException("Email sending failed", e);
         }
     }

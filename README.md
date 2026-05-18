@@ -82,7 +82,7 @@ steam-lens/src/main/java/
 ├── controller/
 │   ├── SteamAuthController.java     # Authentication and Steam API endpoints
 │   ├── UserController.java          # User profile management
-│   └── PriceAlertController. java    # Price alert CRUD operations
+│   └── PriceAlertController.java     # Price alert CRUD operations
 ├── service/
 ��   ├── SteamService.java            # Core Steam API integration
 │   ├── SteamBatchService.java       # Batch price/data fetching
@@ -100,7 +100,7 @@ steam-lens/src/main/java/
 │   ├── Game.java                    # Game metadata model
 │   ├── User.java                    # User profile model
 │   ├── PriceAlert.java              # Price alert configuration
-│   └── SharedLink. java              # Shareable wishlist snapshots
+│   └── SharedLink.java               # Shareable wishlist snapshots
 ├── dto/
 │   ├── OwnedGameDto.java            # Owned game data transfer
 │   ├── WishlistEntryDto.java        # Wishlist game data
@@ -146,7 +146,7 @@ GET    /api/share/{uuid}              # View shared wishlist
 ### Frontend - React + TypeScript
 
 **Technology Stack:**
-- React 18
+- React 19
 - TypeScript
 - Vite (build tool and dev server)
 - Axios (HTTP client)
@@ -158,7 +158,7 @@ GET    /api/share/{uuid}              # View shared wishlist
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── SteamLoginButton.  tsx     # Steam authentication button
+│   │   ├── SteamLoginButton.tsx      # Steam authentication button
 │   │   ├── GameCard.tsx              # Game display component
 │   │   ├── WishlistItem.tsx          # Wishlist entry component
 │   │   └── PriceAlertForm.tsx        # Price alert creation form
@@ -364,7 +364,7 @@ CREATE TABLE shared_links (
 ## Installation and Setup
 
 ### Prerequisites
-- **Java 17+** (OpenJDK recommended)
+- **Java 21+** (OpenJDK recommended)
 - **Node.js 18+** and npm
 - **PostgreSQL 14+**
 - **Steam Web API Key** ([Get one here](https://steamcommunity.com/dev/apikey))
@@ -380,7 +380,7 @@ CREATE TABLE shared_links (
 
 2. **Configure application properties**
    
-   Create `src/main/resources/application.  properties`:
+   Create `src/main/resources/application.properties`:
    ```properties
    # Steam API Configuration
    steam.api.key=YOUR_STEAM_API_KEY
@@ -390,7 +390,7 @@ CREATE TABLE shared_links (
    # Database Configuration
    spring.datasource.url=jdbc:postgresql://localhost:5432/SteamLens
    spring.datasource.username=YOUR_DB_USERNAME
-   spring. datasource.password=YOUR_DB_PASSWORD
+   spring.datasource.password=YOUR_DB_PASSWORD
    spring.jpa.hibernate.ddl-auto=update
    
    # Email Configuration (Gmail SMTP)
@@ -398,8 +398,8 @@ CREATE TABLE shared_links (
    spring.mail.port=587
    spring.mail.username=YOUR_EMAIL@gmail.com
    spring.mail.password=YOUR_APP_PASSWORD
-   spring.mail. properties.mail.smtp.auth=true
-   spring.mail. properties.mail.smtp.starttls.enable=true
+   spring.mail.properties.mail.smtp.auth=true
+   spring.mail.properties.mail.smtp.starttls.enable=true
    
    # Session Configuration
    server.servlet.session.cookie.max-age=86400
@@ -442,7 +442,7 @@ CREATE TABLE shared_links (
    npm run dev
    ```
 
-   Frontend will run on `http://localhost:3000`
+   Frontend will run on `http://localhost:5173`
 
 ### Docker Deployment (Optional)
 

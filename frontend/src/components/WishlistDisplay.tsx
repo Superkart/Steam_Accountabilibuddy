@@ -191,7 +191,6 @@ export const WishlistDisplay = () => {
         authApi.getWishlist(),
         authApi.getLibrary()
       ]);
-      console.log('Wishlist data:', wishlistData);
       setWishlist(wishlistData);
       setLibrary(libraryData);
       setRecommendations(computeBacklogRecommendations(wishlistData, libraryData));
@@ -208,9 +207,7 @@ export const WishlistDisplay = () => {
 
   useEffect(() => {
     loadData();
-    loadPriceAlerts().catch(err => {
-      console.log('Price alerts not available:', err);
-    });
+    loadPriceAlerts().catch(() => {});
   }, [loadData, loadPriceAlerts]);
 
   const findSimilarGames = (wishlistGame: WishlistEntry): Array<{ game: Game; score: number; commonTags: string[] }> => {
