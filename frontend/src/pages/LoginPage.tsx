@@ -7,7 +7,7 @@ export const LoginPage: React.FC = () => {
     <div className="login-page">
       <div className="login-container">
         <div className="login-content">
-          <h1 className="app-title">Steam Accountabilibuddy</h1>
+          <h1 className="app-title">SteamLens</h1>
           <p className="app-description">
             Track your unplayed Steam games and get personalized recommendations from your wishlist
           </p>

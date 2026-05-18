@@ -1,11 +1,11 @@
-# Steam Accountabilibuddy
+# SteamLens
 
 **A Full-Stack Web Application for Smart Steam Library Management and Price Tracking**
 ---
 
 ## Overview
 
-**Steam Accountabilibuddy** is a full-stack web application that helps gamers maximize the value of their Steam library by identifying unplayed games that match their interests and tracking price drops on wishlist items. The application connects to users' Steam accounts via OpenID authentication and provides intelligent game recommendations, automated price alerts, and comprehensive library analytics.
+**SteamLens** is a full-stack web application that helps gamers maximize the value of their Steam library by identifying unplayed games that match their interests and tracking price drops on wishlist items. The application connects to users' Steam accounts via OpenID authentication and provides intelligent game recommendations, automated price alerts, and comprehensive library analytics.
 
 The platform addresses the common problem of game backlogs—purchasing games that never get played—by analyzing your existing library and comparing it against your wishlist to surface games you already own that align with your current interests.
 
@@ -21,7 +21,7 @@ Steam users face several challenges in managing their gaming libraries:
 - **Discovery Paralysis**: Difficulty finding which owned games match current interests
 - **Library Insights**: Lack of analytics on playtime, spending patterns, and gaming habits
 
-Steam Accountabilibuddy solves these problems through intelligent game analysis, automated price tracking, and personalized recommendations based on user-defined criteria and gaming preferences.
+SteamLens solves these problems through intelligent game analysis, automated price tracking, and personalized recommendations based on user-defined criteria and gaming preferences.
 
 ---
 
@@ -78,7 +78,7 @@ Steam Accountabilibuddy solves these problems through intelligent game analysis,
 **Key Components:**
 
 ```
-steam-accountibilibuddy/src/main/java/
+steam-lens/src/main/java/
 ├── controller/
 │   ├── SteamAuthController.java     # Authentication and Steam API endpoints
 │   ├── UserController.java          # User profile management
@@ -374,8 +374,8 @@ CREATE TABLE shared_links (
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Superkart/Steam_Accountabilibuddy.git
-   cd Steam_Accountabilibuddy/steam-accountibilibuddy
+   git clone https://github.com/Superkart/SteamLens.git
+   cd SteamLens/steam-lens
    ```
 
 2. **Configure application properties**
@@ -388,7 +388,7 @@ CREATE TABLE shared_links (
    steam.openid.return=http://localhost:8080/api/auth/steam/return
    
    # Database Configuration
-   spring.datasource.url=jdbc:postgresql://localhost:5432/steam_accountabilibuddy
+   spring.datasource.url=jdbc:postgresql://localhost:5432/SteamLens
    spring.datasource.username=YOUR_DB_USERNAME
    spring. datasource.password=YOUR_DB_PASSWORD
    spring.jpa.hibernate.ddl-auto=update
@@ -408,7 +408,7 @@ CREATE TABLE shared_links (
 
 3. **Create PostgreSQL database**
    ```sql
-   CREATE DATABASE steam_accountabilibuddy;
+   CREATE DATABASE SteamLens;
    ```
 
 4. **Build and run**
@@ -634,7 +634,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Superkart**
 
 - GitHub: [@Superkart](https://github.com/Superkart)
-- Project Repository: [Steam_Accountabilibuddy](https://github.com/Superkart/Steam_Accountabilibuddy)
+- Project Repository: [SteamLens](https://github.com/Superkart/SteamLens)
 
 ---
 

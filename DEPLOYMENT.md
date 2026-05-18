@@ -8,7 +8,7 @@
 2. Navigate to **Compute Engine** > **VM Instances**
 3. Click **Create Instance**
 4. Configure:
-   - **Name**: `steambuddy-vm`
+   - **Name**: `steamlens-vm`
    - **Region**: Choose closest to your users (e.g., `us-central1`)
    - **Machine type**: `e2-medium` (2 vCPU, 4 GB memory) - good starting point
    - **Boot disk**:
@@ -26,9 +26,9 @@
 1. In Google Cloud Console, go to **VPC Network** > **IP Addresses**
 2. Click **Reserve External Static Address**
 3. Configure:
-   - **Name**: `steambuddy-ip`
+   - **Name**: `steamlens-ip`
    - **Region**: Same as your VM
-   - **Attached to**: Select your `steambuddy-vm`
+   - **Attached to**: Select your `steamlens-vm`
 4. Click **Reserve**
 5. **Note down this IP address** - you'll need it for Netlify
 
@@ -95,10 +95,10 @@ sudo apt-get install -y git
 
 ```bash
 # Clone your repo
-git clone https://github.com/Superkart/Steam_Accountabilibuddy.git
+git clone https://github.com/Superkart/SteamLens.git
 
 # Navigate to the project
-cd Steam_Accountabilibuddy
+cd SteamLens
 ```
 
 ### 8. Register Steam API Key (IMPORTANT)
@@ -133,14 +133,14 @@ nano .env
    - ⚠️ **CRITICAL**: This must match your VM IP for Steam OAuth to work
 4. **APP_FRONTEND_URL**: You'll update this after deploying to Netlify (step 13)
    - Leave as placeholder for now, or set to `https://your-site-name.netlify.app`
-5. **Email settings**: Already filled in (steambuddysalealerts@gmail.com)
+5. **Email settings**: Already filled in (steamlenssalealerts@gmail.com)
 
 **Your `.env` file should look like this:**
 ```bash
 DATABASE_PASSWORD=YourStrongPasswordHere123!
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
-MAIL_USERNAME=steambuddysalealerts@gmail.com
+MAIL_USERNAME=steamlenssalealerts@gmail.com
 MAIL_PASSWORD=znvifhzqmjvaqaks
 STEAM_API_KEY=ABC123DEF456GHI789JKL012MNO345PQ  # Your actual key
 APP_BASE_URL=http://34.123.45.67  # Your actual VM IP
@@ -195,7 +195,7 @@ git pull
 docker compose up -d --build
 
 # Access database directly
-docker compose exec postgres psql -U postgres -d steambuddy
+docker compose exec postgres psql -U postgres -d steamlens
 ```
 
 ---
@@ -264,12 +264,12 @@ npm run build
 
 Now that you have your Netlify site URL, you need to update the backend configuration:
 
-1. **Copy your Netlify site URL** (e.g., `https://steambuddy-app.netlify.app`)
+1. **Copy your Netlify site URL** (e.g., `https://steamlens-app.netlify.app`)
 2. **SSH back into your VM**
 3. **Update the `.env` file:**
 
 ```bash
-cd ~/Steam_Accountabilibuddy
+cd ~/SteamLens
 nano .env
 ```
 
@@ -323,7 +323,7 @@ docker compose up -d
 
 ```bash
 # Access database
-docker compose exec postgres psql -U postgres -d steambuddy
+docker compose exec postgres psql -U postgres -d steamlens
 
 # View tables
 \dt
@@ -336,7 +336,7 @@ docker compose exec postgres psql -U postgres -d steambuddy
 
 ```bash
 # On VM
-cd ~/Steam_Accountabilibuddy
+cd ~/SteamLens
 git pull
 docker compose up -d --build
 ```

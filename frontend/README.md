@@ -1,6 +1,6 @@
-# Steam Accountabilibuddy - Frontend
+# SteamLens - Frontend
 
-React + TypeScript frontend for Steam Accountabilibuddy, built with Vite.
+React + TypeScript frontend for SteamLens, built with Vite.
 
 ## Features
 

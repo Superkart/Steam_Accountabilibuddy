@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: steambuddy-db
+    container_name: steamlens-db
     environment:
-      POSTGRES_DB: steambuddy
+      POSTGRES_DB: steamlens
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     ports:
@@ -21,12 +19,12 @@ services:
 
   backend:
     build:
-      context: ./steam-accountibilibuddy
+      context: ./steam-lens
       dockerfile: Dockerfile
-    container_name: steambuddy-backend
+    container_name: steamlens-backend
     environment:
       # Database Configuration
-      DATABASE_URL: jdbc:postgresql://postgres:5432/steambuddy
+      DATABASE_URL: jdbc:postgresql://postgres:5432/steamlens
       DATABASE_USERNAME: postgres
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
 
@@ -45,9 +43,9 @@ services:
 
       # Application Settings
       LOGGING_LEVEL_ROOT: INFO
-      LOGGING_LEVEL_COM_CS484: DEBUG
+      LOGGING_LEVEL_COM_STEAMLENS: DEBUG
     ports:
-      - "80:8080"
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy

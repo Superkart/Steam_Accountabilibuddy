@@ -1,4 +1,4 @@
-# Netlify Configuration for SteamBuddy Frontend
+# Netlify Configuration for SteamLens Frontend
 # This file should be at the repository root when deploying via GitHub
 
 # Proxy all API requests to backend VM

@@ -1,4 +1,4 @@
-# Netlify Configuration for SteamBuddy Frontend (for manual drag-and-drop deployment)
+# Netlify Configuration for SteamLens Frontend (for manual drag-and-drop deployment)
 # This file gets copied to the dist folder and contains only redirects
 
 # Proxy all API requests to backend
