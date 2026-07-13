@@ -4,7 +4,7 @@
 # Proxy all API requests to backend
 [[redirects]]
   from = "/api/*"
-  to = "http://35.209.50.65/api/:splat"
+  to = "http://YOUR_GCP_STATIC_IP/api/:splat"
   status = 200
   force = true
 

@@ -1,375 +1,286 @@
-# Deployment Guide for Google Cloud VM + Netlify
+# SteamLens Deployment Runbook (GCP VM + Netlify)
 
-## Part 1: Set Up Google Cloud VM
+This document is the production deployment path for this repository:
+- Backend + PostgreSQL on a Google Cloud VM using Docker Compose
+- Frontend on Netlify
+- Steam OAuth URLs aligned with deployed backend/frontend URLs
 
-### 1. Create a VM Instance
+---
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Navigate to **Compute Engine** > **VM Instances**
-3. Click **Create Instance**
-4. Configure:
-   - **Name**: `steamlens-vm`
-   - **Region**: Choose closest to your users (e.g., `us-central1`)
-   - **Machine type**: `e2-medium` (2 vCPU, 4 GB memory) - good starting point
-   - **Boot disk**:
-     - Click "Change"
-     - Select **Ubuntu 22.04 LTS** // can change to 24.04 for longer lasting support
-     - Size: **20 GB** minimum
-   - **Firewall**:
-     - ✅ Allow HTTP traffic
-     - ✅ Allow HTTPS traffic
+## 1) Validate repository deployment configuration
 
-5. Click **Create**
+Review these files before deployment:
 
-### 2. Reserve a Static IP Address
+- `/home/runner/work/SteamLens/SteamLens/docker-compose.yml`
+- `/home/runner/work/SteamLens/SteamLens/.env.production`
+- `/home/runner/work/SteamLens/SteamLens/steam-lens/src/main/resources/application.properties`
+- `/home/runner/work/SteamLens/SteamLens/frontend/netlify.toml`
+- `/home/runner/work/SteamLens/SteamLens/netlify.toml`
 
-1. In Google Cloud Console, go to **VPC Network** > **IP Addresses**
-2. Click **Reserve External Static Address**
-3. Configure:
-   - **Name**: `steamlens-ip`
-   - **Region**: Same as your VM
-   - **Attached to**: Select your `steamlens-vm`
-4. Click **Reserve**
-5. **Note down this IP address** - you'll need it for Netlify
+### What to verify
 
-### 3. Configure Firewall Rules
+- `docker-compose.yml` passes these backend env vars into the container:
+  - `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`
+  - `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`
+  - `STEAM_API_KEY`
+  - `APP_BASE_URL`, `APP_FRONTEND_URL`
+- `.env.production` contains placeholders only (no secrets committed).
+- `application.properties` reads runtime values from env vars (`APP_BASE_URL`, `APP_FRONTEND_URL`, DB, mail, steam key).
+- Netlify redirects proxy `/api/*` to your GCP backend static IP.
 
-1. Go to **VPC Network** > **Firewall**
-2. Click **Create Firewall Rule**
-3. Configure:
-   - **Name**: `allow-http-80`
-   - **Direction**: Ingress
-   - **Targets**: All instances in the network
-   - **Source IP ranges**: `0.0.0.0/0`
-   - **Protocols and ports**:
-     - ✅ TCP: `80`
-4. Click **Create**
+Why: Steam OAuth + session flow depends on correct backend/frontend URL and environment alignment.
 
-### 4. SSH into Your VM
+---
 
-1. In **VM Instances**, click **SSH** next to your VM
-2. A terminal window will open
+## 2) Prepare GCP infrastructure
 
-### 5. Install Docker and Docker Compose
-// find good instructions online on how to install on ubunto. (docker.com)
-Run these commands in the SSH terminal:
+### 2.1 Create VM
+
+1. Open Google Cloud Console → **Compute Engine** → **VM instances**
+2. Click **Create instance**
+3. Suggested settings:
+   - Name: `steamlens-vm`
+   - Region: closest to users
+   - Machine type: `e2-medium`
+   - OS: Ubuntu 22.04/24.04 LTS
+   - Disk: 20 GB+
+4. Enable HTTP/HTTPS traffic
+
+### 2.2 Reserve static external IP
+
+1. Go to **VPC network** → **IP addresses**
+2. Reserve external static IP in same region as VM
+3. Attach it to `steamlens-vm`
+4. Record it as `<GCP_STATIC_IP>`
+
+### 2.3 Firewall rules
+
+Allow inbound TCP:
+- `80` (backend/API access via Netlify redirect)
+- `443` (for future HTTPS termination)
+
+Why: static IP prevents OAuth breakage across VM restarts; firewall exposes only required ports.
+
+---
+
+## 3) Install runtime on VM
+
+SSH into VM and run:
 
 ```bash
-# Update package list
 sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg lsb-release git
 
-# Install prerequisites
-sudo apt-get install -y ca-certificates curl gnupg lsb-release
-
-# Add Docker's official GPG key
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-# Set up Docker repository
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Install Docker
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Add your user to docker group (so you don't need sudo)
 sudo usermod -aG docker $USER
-
-# Apply group changes (or logout/login)
 newgrp docker
 
-# Verify installation
 docker --version
 docker compose version
+git --version
 ```
 
-### 6. Install Git
-
-```bash
-sudo apt-get install -y git
-```
-
-### 7. Clone Your Repository
-
-```bash
-# Clone your repo
-git clone https://github.com/Superkart/SteamLens.git
-
-# Navigate to the project
-cd SteamLens
-```
-
-### 8. Register Steam API Key (IMPORTANT)
-
-Before configuring your environment, you need to register a Steam API key for production:
-
-1. Go to https://steamcommunity.com/dev/apikey
-2. Log in with your Steam account
-3. **Domain Name**: Enter `http://YOUR_VM_IP_ADDRESS` (replace with your actual VM IP from step 2)
-   - Example: `http://34.123.45.67`
-4. Agree to terms and click **Register**
-5. **Copy your API key** - you'll need it in the next step
-
-**Note:** While your localhost API key might work, it's best practice to register a new one with your production IP for Steam's OAuth authentication.
-
-### 9. Set Up Environment Variables
-
-```bash
-# Copy the production env template
-cp .env.production .env
-
-# Edit the .env file with your actual values
-nano .env
-```
-
-**Update these values in the `.env` file:**
-
-1. **DATABASE_PASSWORD**: Choose a strong password (e.g., use `openssl rand -base64 32`)
-2. **STEAM_API_KEY**: Paste the API key you just registered in step 8
-3. **APP_BASE_URL**: Set to `http://YOUR_VM_IP_ADDRESS` (replace with your actual VM IP)
-   - Example: `APP_BASE_URL=http://34.123.45.67`
-   - ⚠️ **CRITICAL**: This must match your VM IP for Steam OAuth to work
-4. **APP_FRONTEND_URL**: You'll update this after deploying to Netlify (step 13)
-   - Leave as placeholder for now, or set to `https://your-site-name.netlify.app`
-5. **Email settings**: Already filled in (steamlenssalealerts@gmail.com)
-
-**Your `.env` file should look like this:**
-```bash
-DATABASE_PASSWORD=YourStrongPasswordHere123!
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=steamlenssalealerts@gmail.com
-MAIL_PASSWORD=znvifhzqmjvaqaks
-STEAM_API_KEY=ABC123DEF456GHI789JKL012MNO345PQ  # Your actual key
-APP_BASE_URL=http://34.123.45.67  # Your actual VM IP
-APP_FRONTEND_URL=https://your-site-name.netlify.app  # Update after Netlify deployment
-```
-
-Press `Ctrl+X`, then `Y`, then `Enter` to save.
-
-### 9. Build and Run with Docker Compose
-
-```bash
-# Build and start the services
-docker compose up -d --build
-
-# Check if services are running
-docker compose ps
-
-# View logs (optional)
-docker compose logs -f backend
-```
-
-**Your backend is now running on port 80!**
-
-To verify it's working:
-```bash
-# Test the API endpoint
-curl http://localhost/api/auth/steam/me
-# You should get an "Not authenticated" response, which means the backend is running
-```
-
-### 10. Useful Docker Commands
-
-```bash
-# View running containers
-docker compose ps
-
-# View logs
-docker compose logs -f backend
-docker compose logs -f postgres
-
-# Restart services
-docker compose restart
-
-# Stop services
-docker compose down
-
-# Stop and remove volumes (⚠️ deletes database data)
-docker compose down -v
-
-# Rebuild after code changes
-git pull
-docker compose up -d --build
-
-# Access database directly
-docker compose exec postgres psql -U postgres -d steamlens
-```
+Why: deployment is Docker Compose based.
 
 ---
 
-## Part 2: Deploy Frontend to Netlify
-
-### 1. Build Your Frontend
-
-On your local machine:
+## 4) Pull code onto VM
 
 ```bash
-cd frontend
+cd ~
+git clone https://github.com/Superkart/SteamLens.git
+cd SteamLens
+```
+
+If repo already exists:
+
+```bash
+cd ~/SteamLens
+git pull
+```
+
+Why: VM needs `docker-compose.yml`, backend Dockerfile, and env template from repo.
+
+---
+
+## 5) Create production `.env` on VM
+
+```bash
+cd ~/SteamLens
+cp .env.production .env
+nano .env
+```
+
+Set real values:
+
+```bash
+DATABASE_PASSWORD=<strong-random-password>
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=<your-email>
+MAIL_PASSWORD=<gmail-app-password>
+STEAM_API_KEY=<steam-web-api-key>
+APP_BASE_URL=http://<GCP_STATIC_IP>
+APP_FRONTEND_URL=https://<your-netlify-site>.netlify.app
+```
+
+Why: backend reads runtime config from env vars; OAuth redirect targets depend on these values.
+
+Security:
+- Never commit `.env`
+- Rotate credentials immediately if they were previously exposed
+
+---
+
+## 6) Register/verify Steam API key for production
+
+1. Visit https://steamcommunity.com/dev/apikey
+2. Use `http://<GCP_STATIC_IP>` (or your production backend domain) as domain
+3. Save key and place it in `.env` (`STEAM_API_KEY`)
+
+Why: Steam OpenID/API behavior can fail if production domain/realm is misaligned.
+
+---
+
+## 7) Start backend stack
+
+From `~/SteamLens` on VM:
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose logs -f backend
+```
+
+Why: starts PostgreSQL and Spring Boot backend with production env vars.
+
+---
+
+## 8) Verify backend health before frontend cutover
+
+```bash
+curl http://localhost/api/auth/steam/me
+```
+
+Expected: unauthenticated response (for example `{"error":"Not authenticated"}`)
+
+Why: confirms container networking and backend routing are working.
+
+---
+
+## 9) Deploy frontend to Netlify
+
+On local machine:
+
+```bash
+cd /home/runner/work/SteamLens/SteamLens/frontend
 npm install
 npm run build
 ```
 
-This creates a `dist` folder with your production-ready frontend.
+Deploy `frontend/dist` to Netlify (manual deploy) or connect repository in Netlify.
 
-### 2. Deploy to Netlify
+Why: frontend is static and independently hosted.
 
-1. Go to [Netlify](https://app.netlify.com/)
-2. Sign up or log in
-3. Click **Add new site** > **Deploy manually**
-4. Drag and drop your `frontend/dist` folder
-5. Wait for deployment to complete
+---
 
-### 3. Configure API Proxy
+## 10) Point Netlify API proxy to GCP backend
 
-After deployment:
+Update these files before deploying frontend:
 
-1. In your Netlify site, go to **Site settings** > **Build & deploy** > **Post processing**
-2. Click **Edit settings** for **Asset optimization**
-3. Go to **Site configuration** > **Redirects and rewrites**
-4. Click **Add redirect rule**
+- `/home/runner/work/SteamLens/SteamLens/frontend/netlify.toml`
+- `/home/runner/work/SteamLens/SteamLens/netlify.toml` (if using repo-root Netlify config)
 
-**Note:** A `netlify.toml` file already exists in your `frontend` folder. You just need to update it:
+Replace:
 
-1. Open `frontend/netlify.toml`
-2. Replace `YOUR_VM_IP_ADDRESS` with your reserved static IP from Google Cloud
-
-The file should look like this:
 ```toml
-# Proxy all API requests to backend
-[[redirects]]
-  from = "/api/*"
-  to = "http://YOUR_VM_IP_ADDRESS:80/api/:splat"
-  status = 200
-  force = true
-
-# SPA fallback - all other routes go to index.html
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+to = "http://YOUR_GCP_STATIC_IP/api/:splat"
 ```
 
-**Replace `YOUR_VM_IP_ADDRESS` with your reserved static IP from Google Cloud.**
+with your real static IP.
 
-Then redeploy:
+Rebuild/redeploy frontend after the change.
+
+Why: frontend calls `/api/*`; Netlify must rewrite those requests to backend VM.
+
+---
+
+## 11) Final OAuth alignment pass
+
+After Netlify URL is final, confirm VM `.env` contains exact frontend URL:
+
 ```bash
-npm run build
-# Drag and drop the new dist folder to Netlify
+APP_FRONTEND_URL=https://<your-netlify-site>.netlify.app
 ```
 
-### 4. Update Backend with Netlify URL (CRITICAL)
-
-Now that you have your Netlify site URL, you need to update the backend configuration:
-
-1. **Copy your Netlify site URL** (e.g., `https://steamlens-app.netlify.app`)
-2. **SSH back into your VM**
-3. **Update the `.env` file:**
+Then restart backend:
 
 ```bash
 cd ~/SteamLens
-nano .env
-```
-
-4. **Find and update the `APP_FRONTEND_URL` line:**
-```bash
-APP_FRONTEND_URL=https://your-actual-site-name.netlify.app
-```
-
-5. **Restart the backend** to apply changes:
-```bash
 docker compose restart backend
 ```
 
-⚠️ **This is REQUIRED** - Without this, Steam OAuth won't redirect users back to your frontend after login!
+Why: Steam login redirect and session return flow require exact frontend URL alignment.
 
 ---
 
-## Part 3: Verify Everything Works
+## 12) Post-deploy verification checklist
 
-1. **Visit your Netlify site** (e.g., `https://your-site-name.netlify.app`)
-2. **Test login** with Steam OAuth
-3. **Check wishlist** loads properly
-4. **Create a price alert** to test the full flow
+- Steam login succeeds end-to-end
+- Library loads
+- Wishlist loads
+- Price alert create/delete works
+- Test email notification path
+- Share wishlist link works
 
----
-
-## Troubleshooting
-
-### Backend not starting?
+Use logs during validation:
 
 ```bash
-# Check logs
-docker compose logs backend
+docker compose logs -f backend
+docker compose logs -f postgres
+```
 
-# Check if database is ready
-docker compose logs postgres
+---
 
-# Restart everything
+## 13) Immediate hardening tasks (recommended)
+
+- Add HTTPS termination (Nginx/Caddy/LB + certificate)
+- Restrict SSH ingress to trusted IPs only
+- Configure automated DB backups
+- Add uptime/health monitoring + alerting
+
+Why: production reliability and security.
+
+---
+
+## Useful operational commands
+
+```bash
+# status
+docker compose ps
+
+# restart all services
+docker compose restart
+
+# stop stack
 docker compose down
-docker compose up -d
-```
 
-### Can't connect from frontend?
-
-1. Verify your VM's static IP is correct in `netlify.toml`
-2. Check firewall allows port 80
-3. Test backend directly: `http://YOUR_VM_IP/api/auth/steam/me`
-   - You should see: `{"error":"Not authenticated"}` which means it's working
-
-### Database errors?
-
-```bash
-# Access database
-docker compose exec postgres psql -U postgres -d steamlens
-
-# View tables
-\dt
-
-# Exit
-\q
-```
-
-### Need to update code?
-
-```bash
-# On VM
-cd ~/SteamLens
+# rebuild after pulling changes
 git pull
 docker compose up -d --build
+
+# inspect backend logs
+docker compose logs -f backend
+
+# inspect database logs
+docker compose logs -f postgres
 ```
-
----
-
-## Costs Estimate
-
-- **Google Cloud VM** (e2-medium): ~$25-30/month
-- **Static IP**: $0 (free while attached to running VM)
-- **Netlify**: Free tier (100GB bandwidth/month)
-
-**Total**: ~$25-30/month
-
----
-
-## Security Notes
-
-1. ✅ Your `.env` file is gitignored (contains secrets)
-2. ✅ Database is only accessible within Docker network
-3. ✅ Gmail App Password is used (not your actual password)
-4. ⚠️ Consider setting up HTTPS with Let's Encrypt (optional but recommended)
-5. ⚠️ Consider restricting SSH access to your IP only
-
----
-
-## Optional: Set Up HTTPS
-
-If you want to use your own domain with HTTPS:
-
-1. Buy a domain (e.g., from Google Domains, Namecheap)
-2. Point domain's A record to your VM's static IP
-3. Install Certbot on VM for free SSL certificate
-4. Update Netlify redirects to use `https://yourdomain.com`
-
-Let me know if you want help with this step!
