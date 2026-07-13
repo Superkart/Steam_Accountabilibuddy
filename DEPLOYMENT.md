@@ -11,11 +11,11 @@ This document is the production deployment path for this repository:
 
 Review these files before deployment:
 
-- `/home/runner/work/SteamLens/SteamLens/docker-compose.yml`
-- `/home/runner/work/SteamLens/SteamLens/.env.production`
-- `/home/runner/work/SteamLens/SteamLens/steam-lens/src/main/resources/application.properties`
-- `/home/runner/work/SteamLens/SteamLens/frontend/netlify.toml`
-- `/home/runner/work/SteamLens/SteamLens/netlify.toml`
+- `docker-compose.yml`
+- `.env.production`
+- `steam-lens/src/main/resources/application.properties`
+- `frontend/netlify.toml`
+- `netlify.toml`
 
 ### What to verify
 
@@ -182,7 +182,7 @@ Why: confirms container networking and backend routing are working.
 On local machine:
 
 ```bash
-cd /home/runner/work/SteamLens/SteamLens/frontend
+cd frontend
 npm install
 npm run build
 ```
@@ -197,8 +197,8 @@ Why: frontend is static and independently hosted.
 
 Update these files before deploying frontend:
 
-- `/home/runner/work/SteamLens/SteamLens/frontend/netlify.toml`
-- `/home/runner/work/SteamLens/SteamLens/netlify.toml` (if using repo-root Netlify config)
+- `frontend/netlify.toml`
+- `netlify.toml` (if using repo-root Netlify config)
 
 Replace:
 
